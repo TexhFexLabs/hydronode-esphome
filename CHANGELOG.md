@@ -10,8 +10,7 @@ to use [Semantic Versioning](https://semver.org/).
 
 - Enable ESPHome's full CA certificate bundle for reliable HydroNode TLS
   verification across Cloudflare certificate-chain rotations.
-- Clarify that mapped sensors can remain available in Home Assistant through
-  ESPHome's native API.
+- Keep the shipped examples focused on direct HydroNode operation.
 
 ## [0.1.0] - 2026-07-23
 

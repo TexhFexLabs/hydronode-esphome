@@ -20,8 +20,7 @@
   <a href="https://hydronode.texhfexlabs.de/"><strong>Website</strong></a> ·
   <a href="https://hydronode.texhfexlabs.de/docs/guide/sensor-types/">Sensor Types</a> ·
   <a href="https://hydronode.texhfexlabs.de/docs/faq/">FAQ</a> ·
-  <a href="https://github.com/TexhFexLabs/HydroNode-Library">Arduino Library</a> ·
-  <a href="https://github.com/TexhFexLabs/hydronode-homeassistant">Home Assistant Integration</a>
+  <a href="https://github.com/TexhFexLabs/HydroNode-Library">Arduino Library</a>
 </p>
 
 ---
@@ -183,20 +182,6 @@ hydronode:
 ```
 
 ESPHome reads each source independently. Every `update_interval`, HydroNode sends the latest finite state of every mapping as one signed request per measurement. HydroNode automatically adds a measurement type to the sensor when it first arrives.
-
-## Home Assistant
-
-The HydroNode component does not replace ESPHome's native Home Assistant connection. Each mapped source remains a normal ESPHome sensor.
-
-When the ESPHome API is enabled, the same sensor values are available in Home Assistant and are also uploaded to HydroNode:
-
-```yaml
-api:
-  encryption:
-    key: !secret esphome_api_key
-```
-
-Without `api:` or an MQTT configuration, ESPHome does not publish the sensor to Home Assistant. The HydroNode upload continues to work independently.
 
 ## Examples
 
@@ -375,7 +360,6 @@ CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF an
 
 - [HydroNode website and documentation](https://hydronode.texhfexlabs.de/)
 - [HydroNode Arduino/ESP32 library](https://github.com/TexhFexLabs/HydroNode-Library)
-- [HydroNode Home Assistant integration](https://github.com/TexhFexLabs/hydronode-homeassistant)
 - [ESPHome external component documentation](https://esphome.io/components/external_components/)
 
 ## License
