@@ -6,7 +6,7 @@
 
 <p align="center">
   Native ESPHome external component for the <strong>HydroNode</strong> IoT platform by TexhFexLabs.<br>
-  Map ESPHome sensors to HydroNode, sign every upload, and handle remote commands — entirely in YAML.
+  Map ESPHome sensors to HydroNode, sign every upload, and handle remote commands, all in YAML.
 </p>
 
 <p align="center">
@@ -39,18 +39,18 @@ hydronode:
 
 [HydroNode](https://hydronode.texhfexlabs.de/) is a secure IoT platform for hydroponics, weather stations and environmental monitoring. This component connects normal ESPHome sensor entities to the existing HydroNode API. It uses the same signed wire protocol as [HydroNode-Library](https://github.com/TexhFexLabs/HydroNode-Library), while ESPHome continues to manage WiFi, OTA updates, sensor drivers and local automations.
 
-Create a sensor in the HydroNode web or iOS app, add its credentials to ESPHome secrets, and flash the ESP32.
+Create a sensor on the HydroNode Website or in the iOS App, add its credentials to ESPHome secrets, and flash the ESP32.
 
 ## Features
 
-- **YAML-native sensor mapping** — connect any ESPHome numeric sensor to a HydroNode measurement type.
-- **Several values per HydroNode sensor** — temperature, humidity, pH and other measurements can share one sensor UUID.
-- **Secure by default** — uploads and command acknowledgements use HMAC-SHA256 signatures over HTTPS.
-- **Replay protection** — ESPHome time is checked before transmission; an unsynchronized device will not send an invalid request.
-- **Remote commands** — receive HydroNode commands and drive ESPHome switches, outputs, scripts or other automations.
-- **Manual uploads** — use the `hydronode.send` action from buttons, intervals or automations.
-- **Useful diagnostics** — success and error triggers expose the measurement type, value and HTTP status without logging the secret.
-- **Both ESP32 frameworks** — continuously validated with ESP-IDF and Arduino.
+- **YAML-native sensor mapping:** Connect any ESPHome numeric sensor to a HydroNode measurement type.
+- **Several values per HydroNode sensor:** Temperature, humidity, pH and other measurements can share one sensor UUID.
+- **Secure by default:** Uploads and command acknowledgements use HMAC-SHA256 signatures over HTTPS.
+- **Replay protection:** ESPHome time is checked before transmission. An unsynchronized device will not send an invalid request.
+- **Remote commands:** Receive HydroNode commands and drive ESPHome switches, outputs, scripts or other automations.
+- **Manual uploads:** Use the `hydronode.send` action from buttons, intervals or automations.
+- **Useful diagnostics:** Success and error triggers expose the measurement type, value and HTTP status without logging the secret.
+- **Both ESP32 frameworks:** Continuously validated with ESP-IDF and Arduino.
 
 ## Compatibility
 
@@ -60,7 +60,7 @@ Create a sensor in the HydroNode web or iOS app, add its credentials to ESPHome 
 | Boards | ESP32 family |
 | Frameworks | ESP-IDF and Arduino |
 | Network | Any ESPHome network supported by `http_request` |
-| HydroNode | Sensor UUID and device secret from the web or iOS app |
+| HydroNode | Sensor UUID and device secret from the HydroNode Website or iOS App |
 
 ESP8266 is not currently supported. The implementation relies on the ESP32 mbedTLS stack and is compiled in CI against both supported ESP32 frameworks.
 
@@ -68,7 +68,7 @@ ESP8266 is not currently supported. The implementation relies on the ESP32 mbedT
 
 ### 1. Obtain HydroNode credentials
 
-Create one sensor in the [HydroNode web app](https://hydronode.texhfexlabs.de/) or iOS app. Copy:
+Create one sensor on the [HydroNode Website](https://hydronode.texhfexlabs.de/) or in the iOS App. Copy:
 
 - the sensor UUID;
 - the device secret.
@@ -184,6 +184,20 @@ hydronode:
 
 ESPHome reads each source independently. Every `update_interval`, HydroNode sends the latest finite state of every mapping as one signed request per measurement. HydroNode automatically adds a measurement type to the sensor when it first arrives.
 
+## Home Assistant
+
+The HydroNode component does not replace ESPHome's native Home Assistant connection. Each mapped source remains a normal ESPHome sensor.
+
+When the ESPHome API is enabled, the same sensor values are available in Home Assistant and are also uploaded to HydroNode:
+
+```yaml
+api:
+  encryption:
+    key: !secret esphome_api_key
+```
+
+Without `api:` or an MQTT configuration, ESPHome does not publish the sensor to Home Assistant. The HydroNode upload continues to work independently.
+
 ## Examples
 
 All examples are complete, commented ESPHome configurations:
@@ -209,18 +223,18 @@ esphome run examples/basic-dht22.yaml
 | Option | Required | Default | Description |
 |---|---:|---|---|
 | `id` | no | generated | ESPHome component ID; required when referring to this instance from `hydronode.send` |
-| `sensor_id` | yes | — | Canonical HydroNode sensor UUID |
-| `device_secret` | yes | — | HydroNode device secret; use `!secret` |
-| `measurements` | yes | — | 1–25 source/type mappings |
+| `sensor_id` | yes | n/a | Canonical HydroNode sensor UUID |
+| `device_secret` | yes | n/a | HydroNode device secret; use `!secret` |
+| `measurements` | yes | n/a | 1–25 source/type mappings |
 | `http_request_id` | usually no | auto-resolved | ID of the ESPHome `http_request` component |
 | `time_id` | usually no | auto-resolved | ID of the ESPHome real-time clock |
 | `base_url` | no | `https://hydronode.texhfexlabs.de` | HydroNode origin without a path |
 | `update_interval` | no | `60s` | Upload cycle; minimum `10s` |
 | `response_buffer_size` | no | `2048` | Maximum command-response body in bytes; range 256–16384 |
 | `allow_insecure` | no | `false` | Explicit opt-in to HTTP for local development only |
-| `on_command` | no | — | Automation invoked for each received command |
-| `on_upload_success` | no | — | Automation invoked after an HTTP `202` |
-| `on_upload_error` | no | — | Automation invoked after local or HTTP errors |
+| `on_command` | no | n/a | Automation invoked for each received command |
+| `on_upload_success` | no | n/a | Automation invoked after an HTTP `202` |
+| `on_upload_error` | no | n/a | Automation invoked after local or HTTP errors |
 
 ### `measurements`
 
@@ -254,8 +268,8 @@ Manual sends share the HydroNode rate limit with scheduled sends. The action per
 
 Commands already queued for the HydroNode sensor are returned with an accepted measurement. The component acknowledges their receipt and exposes two variables:
 
-- `command` — command name as a C++ `std::string`;
-- `value_json` — exact JSON scalar, for example `true`, `4000`, `12.5` or `"auto"`.
+- `command`: command name as a C++ `std::string`;
+- `value_json`: exact JSON scalar, for example `true`, `4000`, `12.5` or `"auto"`.
 
 ```yaml
 hydronode:
@@ -314,6 +328,7 @@ Status codes:
 - Every body is serialized deterministically and signed as `Base64(HMAC-SHA256(payload + timestamp))`.
 - `X-Sensor-Id`, `X-Timestamp` and `X-Signature` are sent using the existing HydroNode protocol.
 - HydroNode rejects requests outside its short timestamp window, reducing replay risk.
+- The full ESPHome CA certificate bundle is enabled automatically so Cloudflare certificate-chain rotations remain trusted.
 - `verify_ssl: true` must remain enabled for production. Plain HTTP requires both an HTTP `base_url` and `allow_insecure: true`.
 - The component never prints the device secret, but ESPHome embeds it in the firmware. Protect configuration files, build artifacts, backups and physical access to the device.
 - Rotate the HydroNode device secret if a configuration or firmware image is exposed.
@@ -365,7 +380,7 @@ CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF an
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 HydroNode ESPHome is developed and maintained by **TexhFexLabs**.
 Support, feature requests and business inquiries: contact@knollfelix.de

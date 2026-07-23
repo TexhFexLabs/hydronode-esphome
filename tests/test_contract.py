@@ -66,6 +66,12 @@ class HydroNodeContractTest(unittest.TestCase):
         self.assertIn('"/api/webhook/sensor-command-ack"', source)
         self.assertRegex(source, re.compile(r'"X-Signature"'))
 
+    def test_full_ca_bundle_is_required(self):
+        source = (
+            ROOT / "components" / "hydronode" / "__init__.py"
+        ).read_text()
+        self.assertIn("esp32.require_full_certificate_bundle()", source)
+
 
 if __name__ == "__main__":
     unittest.main()

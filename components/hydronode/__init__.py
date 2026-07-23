@@ -7,12 +7,12 @@ from urllib.parse import urlparse
 
 from esphome import automation
 import esphome.codegen as cg
-from esphome.components import http_request, sensor, time
+from esphome.components import esp32, http_request, sensor, time
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_UPDATE_INTERVAL
 
 CODEOWNERS = ["@TexhFexLabs"]
-DEPENDENCIES = ["http_request", "network", "sensor", "time"]
+DEPENDENCIES = ["esp32", "http_request", "network", "sensor", "time"]
 AUTO_LOAD = ["json"]
 MULTI_CONF = True
 
@@ -102,6 +102,11 @@ def _validate_config(config):
                 "be mapped once per HydroNode component"
             )
         seen_types.add(sensor_type)
+
+    # Cloudflare may rotate HydroNode between certificate chains rooted at
+    # Google Trust Services, Let's Encrypt, or SSL.com. ESPHome's smaller
+    # common-CA bundle does not include every one of those roots.
+    esp32.require_full_certificate_bundle()
 
     config[CONF_BASE_URL] = config[CONF_BASE_URL].rstrip("/")
     return config
