@@ -1,0 +1,77 @@
+esphome:
+  name: hydronode-test-idf
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: test
+  password: test-password
+
+logger:
+
+external_components:
+  - source: ../../components
+    components: [hydronode]
+
+http_request:
+  id: hydronode_http
+  timeout: 5s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+sensor:
+  - platform: template
+    id: test_temperature
+    name: Test Temperature
+    update_interval: 30s
+    lambda: return 21.5f;
+  - platform: template
+    id: test_humidity
+    name: Test Humidity
+    update_interval: 30s
+    lambda: return 55.0f;
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  base_url: https://hydronode.texhfexlabs.de
+  sensor_id: 550e8400-e29b-41d4-a716-446655440000
+  device_secret: test-secret-at-least-16-characters
+  update_interval: 60s
+  response_buffer_size: 2048
+  measurements:
+    - source: test_temperature
+      type: TEMPERATURE
+    - source: test_humidity
+      type: HUMIDITY
+  on_command:
+    then:
+      - logger.log:
+          format: "command=%s value=%s"
+          args: [command.c_str(), value_json.c_str()]
+  on_upload_success:
+    then:
+      - logger.log:
+          format: "uploaded %s=%.2f"
+          args: [type.c_str(), value]
+  on_upload_error:
+    then:
+      - logger.log:
+          format: "failed %s=%.2f status=%d"
+          args: [type.c_str(), value, status]
+
+interval:
+  - interval: 5min
+    then:
+      - hydronode.send:
+          id: hydronode_cloud
+          type: BATTERY_VOLTAGE
+          value: 3.85

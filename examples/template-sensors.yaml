@@ -1,0 +1,63 @@
+esphome:
+  name: hydronode-template
+  friendly_name: HydroNode Template Sensors
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/TexhFexLabs/hydronode-esphome
+      ref: main
+    components: [hydronode]
+    refresh: 1d
+
+http_request:
+  id: hydronode_http
+  timeout: 10s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+sensor:
+  - platform: template
+    id: demo_temperature
+    name: Demo Temperature
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    update_interval: 30s
+    lambda: return 21.5f;
+
+  - platform: template
+    id: demo_humidity
+    name: Demo Humidity
+    unit_of_measurement: "%"
+    device_class: humidity
+    state_class: measurement
+    update_interval: 30s
+    lambda: return 55.0f;
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: !secret hydronode_sensor_id
+  device_secret: !secret hydronode_device_secret
+  measurements:
+    - source: demo_temperature
+      type: TEMPERATURE
+    - source: demo_humidity
+      type: HUMIDITY

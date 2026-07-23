@@ -1,0 +1,22 @@
+[
+  {
+    "name": "temperature-positive",
+    "sensor_id": "550e8400-e29b-41d4-a716-446655440000",
+    "secret": "hydronode-test-secret-2026",
+    "type": "TEMPERATURE",
+    "value": 23.4,
+    "timestamp": 1784793600,
+    "payload": "{\"sensorId\":\"550e8400-e29b-41d4-a716-446655440000\",\"type\":\"TEMPERATURE\",\"value\":23.40,\"timestamp\":1784793600}",
+    "signature": "oS/GuGW9qUbSsorJ/x63i2c0id5r2jqI1dSglNbJb+Q="
+  },
+  {
+    "name": "ph-two-decimals",
+    "sensor_id": "550e8400-e29b-41d4-a716-446655440000",
+    "secret": "hydronode-test-secret-2026",
+    "type": "WATER_PH",
+    "value": 7.0,
+    "timestamp": 1784793660,
+    "payload": "{\"sensorId\":\"550e8400-e29b-41d4-a716-446655440000\",\"type\":\"WATER_PH\",\"value\":7.00,\"timestamp\":1784793660}",
+    "signature": "Qs/inaVIC+bwrI38X9LSqFkXIZ3ScNBxnxhkNHj7Ec8="
+  }
+]

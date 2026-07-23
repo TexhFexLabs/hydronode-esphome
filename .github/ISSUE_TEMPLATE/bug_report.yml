@@ -1,0 +1,51 @@
+name: Bug report
+description: Report reproducible component or configuration behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include WiFi credentials, API keys, sensor UUIDs or device secrets.
+  - type: input
+    id: version
+    attributes:
+      label: ESPHome and component version
+      placeholder: "ESPHome 2026.7.1, hydronode-esphome v0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware and framework
+      placeholder: "ESP32 DevKit V1, ESP-IDF, DHT22"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Minimal redacted YAML
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed all credentials and identifying values.
+          required: true
+        - label: I searched existing issues.
+          required: true

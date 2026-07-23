@@ -1,0 +1,46 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run contract tests
+        run: python -m unittest discover -s tests -v
+
+  esphome:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - tests/configs/minimal-idf.yaml
+          - tests/configs/minimal-arduino.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .esphome
+          key: esphome-2026.7.1-${{ runner.os }}-${{ matrix.config }}
+      - name: Install ESPHome
+        run: pip install "esphome==2026.7.1"
+      - name: Validate configuration
+        run: esphome config "${{ matrix.config }}"
+      - name: Compile firmware
+        run: esphome compile "${{ matrix.config }}"

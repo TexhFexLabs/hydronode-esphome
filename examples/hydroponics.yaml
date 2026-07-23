@@ -1,0 +1,99 @@
+substitutions:
+  device_name: hydronode-hydroponics
+  friendly_name: HydroNode Hydroponics
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+api:
+  encryption:
+    key: !secret esphome_api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/TexhFexLabs/hydronode-esphome
+      ref: main
+    components: [hydronode]
+    refresh: 1d
+
+http_request:
+  id: hydronode_http
+  timeout: 10s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+one_wire:
+  - platform: gpio
+    pin: GPIO18
+
+sensor:
+  # Waterproof DS18B20 probe on the 1-Wire bus.
+  - platform: dallas_temp
+    id: water_temperature
+    name: Water Temperature
+    update_interval: 60s
+
+  # Example analog pH board on GPIO34. Calibrate the points for your board
+  # and probe; these values are deliberately placeholders.
+  - platform: adc
+    pin: GPIO34
+    id: water_ph
+    name: Water pH
+    attenuation: 12db
+    update_interval: 60s
+    filters:
+      - median:
+          window_size: 7
+          send_every: 1
+          send_first_at: 1
+      - calibrate_linear:
+          method: exact
+          datapoints:
+            - 2.50 -> 7.00
+            - 3.00 -> 4.00
+      - clamp:
+          min_value: 0.0
+          max_value: 14.0
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: !secret hydronode_sensor_id
+  device_secret: !secret hydronode_device_secret
+  update_interval: 60s
+  measurements:
+    - source: water_temperature
+      type: WATER_TEMPERATURE
+    - source: water_ph
+      type: WATER_PH
+  on_upload_error:
+    then:
+      - logger.log:
+          level: WARN
+          format: "HydroNode upload failed: type=%s value=%.2f status=%d"
+          args:
+            - type.c_str()
+            - value
+            - status

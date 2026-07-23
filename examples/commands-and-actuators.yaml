@@ -1,0 +1,110 @@
+substitutions:
+  device_name: hydronode-actuator
+  friendly_name: HydroNode Actuator
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+api:
+  encryption:
+    key: !secret esphome_api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/TexhFexLabs/hydronode-esphome
+      ref: main
+    components: [hydronode]
+    refresh: 1d
+
+http_request:
+  id: hydronode_http
+  timeout: 10s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+switch:
+  - platform: gpio
+    id: nutrient_pump
+    name: Nutrient Pump
+    pin: GPIO26
+    restore_mode: ALWAYS_OFF
+
+sensor:
+  - platform: adc
+    pin: GPIO34
+    id: water_level
+    name: Water Level
+    attenuation: 12db
+    update_interval: 60s
+    filters:
+      - calibrate_linear:
+          method: exact
+          datapoints:
+            - 0.50 -> 0.0
+            - 2.50 -> 100.0
+      - clamp:
+          min_value: 0.0
+          max_value: 100.0
+    unit_of_measurement: "%"
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: !secret hydronode_sensor_id
+  device_secret: !secret hydronode_device_secret
+  update_interval: 60s
+  measurements:
+    - source: water_level
+      type: WATER_LEVEL
+
+  # value_json contains the exact JSON scalar sent by HydroNode:
+  # true, false, 4000, 12.5 or "text".
+  on_command:
+    then:
+      - if:
+          condition:
+            lambda: return command == "pump";
+          then:
+            - if:
+                condition:
+                  lambda: return value_json == "true";
+                then:
+                  - switch.turn_on: nutrient_pump
+                else:
+                  - switch.turn_off: nutrient_pump
+          else:
+            - logger.log:
+                level: WARN
+                format: "Unknown HydroNode command: %s"
+                args: [command.c_str()]
+
+button:
+  - platform: template
+    name: Send Water Level Now
+    on_press:
+      - hydronode.send:
+          id: hydronode_cloud
+          type: WATER_LEVEL
+          value: !lambda return id(water_level).state;

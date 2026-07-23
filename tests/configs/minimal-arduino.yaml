@@ -1,0 +1,43 @@
+esphome:
+  name: hydronode-test-arduino
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+wifi:
+  ssid: test
+  password: test-password
+
+logger:
+
+external_components:
+  - source: ../../components
+    components: [hydronode]
+
+http_request:
+  id: hydronode_http
+  timeout: 5s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+sensor:
+  - platform: template
+    id: test_value
+    name: Test Value
+    update_interval: 30s
+    lambda: return 42.0f;
+
+hydronode:
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: 550e8400-e29b-41d4-a716-446655440000
+  device_secret: test-secret-at-least-16-characters
+  measurements:
+    - source: test_value
+      type: TEMPERATURE

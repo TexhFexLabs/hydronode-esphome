@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest a focused improvement to the ESPHome integration
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What real device or workflow should this enable?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include a YAML example if possible.
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend impact
+      options:
+        - Works with the current HydroNode API
+        - Might require a backend change
+        - Unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: provisioning
+    attributes:
+      label: Scope
+      options:
+        - label: This request does not assume automatic device provisioning.
