@@ -5,8 +5,8 @@
 <h1 align="center">HydroNode ESPHome</h1>
 
 <p align="center">
-  Native ESPHome external component for the <strong>HydroNode</strong> IoT backend by TexhFexLabs.<br>
-  Map ESPHome sensors to HydroNode, sign every upload, and handle backend commands — entirely in YAML.
+  Native ESPHome external component for the <strong>HydroNode</strong> IoT platform by TexhFexLabs.<br>
+  Map ESPHome sensors to HydroNode, sign every upload, and handle remote commands — entirely in YAML.
 </p>
 
 <p align="center">
@@ -39,7 +39,7 @@ hydronode:
 
 [HydroNode](https://hydronode.texhfexlabs.de/) is a secure IoT platform for hydroponics, weather stations and environmental monitoring. This component connects normal ESPHome sensor entities to the existing HydroNode API. It uses the same signed wire protocol as [HydroNode-Library](https://github.com/TexhFexLabs/HydroNode-Library), while ESPHome continues to manage WiFi, OTA updates, sensor drivers and local automations.
 
-**No HydroNode backend changes are required.** Create the device credentials manually in the HydroNode web or iOS app, add them to ESPHome secrets, and flash the ESP32. Automatic device provisioning is deliberately not part of this component.
+Create a sensor in the HydroNode web or iOS app, add its credentials to ESPHome secrets, and flash the ESP32.
 
 ## Features
 
@@ -47,11 +47,10 @@ hydronode:
 - **Several values per HydroNode sensor** — temperature, humidity, pH and other measurements can share one sensor UUID.
 - **Secure by default** — uploads and command acknowledgements use HMAC-SHA256 signatures over HTTPS.
 - **Replay protection** — ESPHome time is checked before transmission; an unsynchronized device will not send an invalid request.
-- **Backend commands** — receive the commands already returned by HydroNode and drive ESPHome switches, outputs, scripts or other automations.
+- **Remote commands** — receive HydroNode commands and drive ESPHome switches, outputs, scripts or other automations.
 - **Manual uploads** — use the `hydronode.send` action from buttons, intervals or automations.
 - **Useful diagnostics** — success and error triggers expose the measurement type, value and HTTP status without logging the secret.
 - **Both ESP32 frameworks** — continuously validated with ESP-IDF and Arduino.
-- **No custom backend, proxy or broker** — it talks directly to the currently deployed HydroNode endpoints.
 
 ## Compatibility
 
@@ -61,8 +60,7 @@ hydronode:
 | Boards | ESP32 family |
 | Frameworks | ESP-IDF and Arduino |
 | Network | Any ESPHome network supported by `http_request` |
-| HydroNode API | Existing `/api/webhook/sensor-value` and `/api/webhook/sensor-command-ack` endpoints |
-| Automatic provisioning | Not included |
+| HydroNode | Sensor UUID and device secret from the web or iOS app |
 
 ESP8266 is not currently supported. The implementation relies on the ESP32 mbedTLS stack and is compiled in CI against both supported ESP32 frameworks.
 
@@ -184,7 +182,7 @@ hydronode:
       type: HUMIDITY
 ```
 
-ESPHome reads each source independently. Every `update_interval`, HydroNode sends the latest finite state of every mapping as one signed request per measurement. A type is automatically created for the sensor by the existing backend when it first arrives.
+ESPHome reads each source independently. Every `update_interval`, HydroNode sends the latest finite state of every mapping as one signed request per measurement. HydroNode automatically adds a measurement type to the sensor when it first arrives.
 
 ## Examples
 
@@ -231,7 +229,7 @@ esphome run examples/basic-dht22.yaml
 | `source` | yes | ID of any ESPHome numeric sensor |
 | `type` | yes | HydroNode type: uppercase `A-Z`, digits and `_`, maximum 64 characters |
 
-Each type must be unique within one `hydronode` block. The backend currently supports up to 25 measurement types per HydroNode sensor. Keep the component interval at 10 seconds or more to respect the existing per-sensor/type rate limit.
+Each type must be unique within one `hydronode` block. HydroNode supports up to 25 measurement types per sensor. Keep the component interval at 10 seconds or more to respect the per-sensor/type rate limit.
 
 Common types include `TEMPERATURE`, `HUMIDITY`, `PRESSURE`, `CO2`, `PM25`, `SOIL_MOISTURE`, `WATER_TEMPERATURE`, `WATER_PH`, `WATER_EC` and `BATTERY_VOLTAGE`. See the [HydroNode sensor type reference](https://hydronode.texhfexlabs.de/docs/guide/sensor-types/) for the complete list and expected units.
 
@@ -250,9 +248,9 @@ button:
           value: !lambda return id(water_ph).state;
 ```
 
-Manual sends share the backend rate limit with scheduled sends. The action performs the signed HTTPS request synchronously, just like ESPHome's `http_request` action.
+Manual sends share the HydroNode rate limit with scheduled sends. The action performs the signed HTTPS request synchronously, just like ESPHome's `http_request` action.
 
-## Backend commands
+## Remote commands
 
 Commands already queued for the HydroNode sensor are returned with an accepted measurement. The component acknowledges their receipt and exposes two variables:
 
@@ -315,27 +313,23 @@ Status codes:
 
 - Every body is serialized deterministically and signed as `Base64(HMAC-SHA256(payload + timestamp))`.
 - `X-Sensor-Id`, `X-Timestamp` and `X-Signature` are sent using the existing HydroNode protocol.
-- The backend rejects requests outside its short timestamp window, reducing replay risk.
+- HydroNode rejects requests outside its short timestamp window, reducing replay risk.
 - `verify_ssl: true` must remain enabled for production. Plain HTTP requires both an HTTP `base_url` and `allow_insecure: true`.
 - The component never prints the device secret, but ESPHome embeds it in the firmware. Protect configuration files, build artifacts, backups and physical access to the device.
 - Rotate the HydroNode device secret if a configuration or firmware image is exposed.
 
-## What this integration intentionally does not do
+## Current limitations
 
-- **No automatic device provisioning.** Credentials are created manually in HydroNode and placed in ESPHome secrets.
-- **No backend modifications.** Only the two already deployed webhook endpoints are used.
-- **No offline history queue.** The current API authenticates a fresh request timestamp. Safely backfilling the original measurement time would require a separately designed backend contract.
-- **No batching.** The current endpoint accepts one measurement per request.
-- **No command polling without telemetry.** Commands are delivered in successful upload responses.
-
-These boundaries keep the component deployable today without migrations or server releases.
+- Measurements are sent live; there is no on-device offline history queue.
+- Each measurement is uploaded separately.
+- Commands are delivered after a successful measurement upload rather than through independent polling.
 
 ## Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
 | `clock is not synchronized` | NTP has not completed; confirm DNS/internet access and wait for time sync |
-| HTTP `401` | Sensor UUID/secret mismatch or clock outside the backend window |
+| HTTP `401` | Sensor UUID/secret mismatch or clock outside the accepted time window |
 | HTTP `429` | The same type was sent too frequently |
 | HTTP/TLS failure | DNS, firewall, certificate validation or network instability |
 | Sensor is skipped | The source has not published a state yet, or its state is `NaN`/infinite |
@@ -361,21 +355,6 @@ esphome compile tests/configs/minimal-arduino.yaml
 ```
 
 CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF and Arduino. See [CONTRIBUTING.md](CONTRIBUTING.md) for project contributions.
-
-## Getting it into official ESPHome
-
-This repository is already usable as an [ESPHome external component](https://esphome.io/components/external_components/); inclusion in ESPHome itself is a separate upstream process, not a registry submission.
-
-In short:
-
-1. Stabilize the external component, publish tagged releases and collect real-world feedback.
-2. Discuss suitability with ESPHome maintainers before doing a large upstream conversion.
-3. Adapt the code to the current ESPHome tree and contribution rules.
-4. Open a code pull request against [`esphome/esphome`](https://github.com/esphome/esphome).
-5. Add English user documentation in a separate pull request against [`esphome/esphome.io`](https://github.com/esphome/esphome.io).
-6. Respond to review and commit to ongoing maintenance.
-
-Cloud-vendor-specific components are evaluated by the ESPHome maintainers and may intentionally remain external. There is no guarantee of acceptance, and **no HydroNode backend change is required for either distribution model**. The detailed, current checklist is in [`docs/upstreaming.md`](docs/upstreaming.md).
 
 ## Related
 
