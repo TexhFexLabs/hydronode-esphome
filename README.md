@@ -95,12 +95,12 @@ external_components:
   - source:
       type: git
       url: https://github.com/TexhFexLabs/hydronode-esphome
-      ref: main
+      ref: v0.1.0
     components: [hydronode]
     refresh: 1d
 ```
 
-For production devices, pin `ref` to a release tag once releases are published instead of following `main`.
+`ref` is pinned to a release tag so a device build never changes underneath you. Use `ref: main` only to test unreleased changes.
 
 ### 4. Configure HTTP and time
 
@@ -141,7 +141,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/TexhFexLabs/hydronode-esphome
-      ref: main
+      ref: v0.1.0
     components: [hydronode]
 
 http_request:

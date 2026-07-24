@@ -6,13 +6,7 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
-
-- Enable ESPHome's full CA certificate bundle for reliable HydroNode TLS
-  verification across Cloudflare certificate-chain rotations.
-- Keep the shipped examples focused on direct HydroNode operation.
-
-## [0.1.0] - 2026-07-23
+## [0.1.0] - 2026-07-24
 
 ### Added
 
@@ -23,6 +17,9 @@ to use [Semantic Versioning](https://semver.org/).
 - Upload success, upload error and command automation triggers.
 - ESP-IDF and Arduino compile configurations.
 - HMAC contract vectors, CI, examples and full documentation.
+- Full CA certificate bundle for reliable HydroNode TLS verification across
+  Cloudflare certificate-chain rotations.
+- Tag-triggered release workflow gated on the validation matrix.
 
 [Unreleased]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/TexhFexLabs/hydronode-esphome/releases/tag/v0.1.0
