@@ -215,12 +215,17 @@ esphome run examples/basic-dht22.yaml
 | `time_id` | usually no | auto-resolved | ID of the ESPHome real-time clock |
 | `base_url` | no | `https://hydronode.texhfexlabs.de` | HydroNode origin without a path |
 | `update_interval` | no | `60s` | Upload cycle; minimum `10s` |
-| `response_buffer_size` | no | `2048` | Maximum command-response body in bytes; range 256–16384 |
+| `response_buffer_size` | no | `16384` | Maximum command-response body in bytes; range 256–16384 |
 | `allow_insecure` | no | `false` | Explicit opt-in to HTTP for local development only |
 | `commands` | no | n/a | 1–64 `name`/`type` pairs the device handles; others are declined. Without it every command is confirmed |
 | `on_command` | no | n/a | Automation invoked for each confirmed command |
 | `on_upload_success` | no | n/a | Automation invoked after an HTTP `202` |
 | `on_upload_error` | no | n/a | Automation invoked after local or HTTP errors |
+
+The default response buffer fits eight maximum-length commands, including UTF-8
+text. If your existing YAML explicitly sets a smaller `response_buffer_size`,
+remove that override or set it to `16384` when upgrading. A truncated response
+cannot be acknowledged or dispatched.
 
 ### `measurements`
 

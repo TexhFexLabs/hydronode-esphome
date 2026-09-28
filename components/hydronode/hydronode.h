@@ -69,7 +69,7 @@ class HydroNodeComponent final : public PollingComponent {
   std::string base_url_;
   std::string sensor_id_;
   std::string device_secret_;
-  size_t response_buffer_size_{2048};
+  size_t response_buffer_size_{16384};
   std::vector<HydroNodeMeasurement> measurements_;
   std::map<std::string, std::string> commands_;
 

@@ -165,7 +165,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_MEASUREMENTS): cv.All(
                 cv.ensure_list(MEASUREMENT_SCHEMA), cv.Length(min=1, max=25)
             ),
-            cv.Optional(CONF_RESPONSE_BUFFER_SIZE, default=2048): cv.int_range(
+            cv.Optional(CONF_RESPONSE_BUFFER_SIZE, default=16384): cv.int_range(
                 min=256, max=16384
             ),
             cv.Optional(CONF_ALLOW_INSECURE, default=False): cv.boolean,
