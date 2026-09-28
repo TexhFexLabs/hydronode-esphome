@@ -75,8 +75,15 @@ hydronode:
     - source: water_level
       type: WATER_LEVEL
 
-  # value_json contains the exact JSON scalar sent by HydroNode:
-  # true, false, 4000, 12.5 or "text".
+  # Declare every command this device handles, with the value type picked in
+  # the HydroNode app. Commands with another name or type are declined and the
+  # app shows why; only declared commands reach on_command.
+  commands:
+    - name: pump
+      type: BOOL
+
+  # value_json contains the exact JSON scalar sent by HydroNode, e.g. true,
+  # 4000 or "text". type is the declared value type, e.g. BOOL.
   on_command:
     then:
       - if:

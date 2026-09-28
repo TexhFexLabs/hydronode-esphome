@@ -217,7 +217,8 @@ esphome run examples/basic-dht22.yaml
 | `update_interval` | no | `60s` | Upload cycle; minimum `10s` |
 | `response_buffer_size` | no | `2048` | Maximum command-response body in bytes; range 256–16384 |
 | `allow_insecure` | no | `false` | Explicit opt-in to HTTP for local development only |
-| `on_command` | no | n/a | Automation invoked for each received command |
+| `commands` | no | n/a | 1–64 `name`/`type` pairs the device handles; others are declined. Without it every command is confirmed |
+| `on_command` | no | n/a | Automation invoked for each confirmed command |
 | `on_upload_success` | no | n/a | Automation invoked after an HTTP `202` |
 | `on_upload_error` | no | n/a | Automation invoked after local or HTTP errors |
 
@@ -251,10 +252,32 @@ Manual sends share the HydroNode rate limit with scheduled sends. The action per
 
 ## Remote commands
 
-Commands already queued for the HydroNode sensor are returned with an accepted measurement. The component acknowledges their receipt and exposes two variables:
+Commands already queued for the HydroNode sensor are returned with an accepted measurement. In the HydroNode app every command has a name, a value type (`BOOL`, `INT32`, `UINT32`, `INT64`, `UINT64`, `STRING`) and a value.
+
+Declare the commands your device handles under `commands:`. The component then answers the backend before any automation runs:
+
+- a declared name with the matching type is **confirmed** and passed to `on_command`;
+- an unknown name is **declined** with reason `NO_HANDLER`;
+- a different type is **declined** with `TYPE_MISMATCH`;
+- a value that does not fit the type (for example `-1` for `UINT32`) is **declined** with `INVALID_VALUE`.
+
+The app shows declined commands with the reason, and they never reach your automation. Without a `commands:` block every command is confirmed and passed on, as in earlier versions.
+
+```yaml
+hydronode:
+  # ...credentials and measurements...
+  commands:
+    - name: pump
+      type: BOOL
+    - name: co2_calibration
+      type: UINT32
+```
+
+`on_command` exposes three variables:
 
 - `command`: command name as a C++ `std::string`;
-- `value_json`: exact JSON scalar, for example `true`, `4000`, `12.5` or `"auto"`.
+- `value_json`: exact JSON scalar, for example `true`, `4000` or `"auto"`. Hex entered in the app (`0x20124`) arrives as the decimal number `131364`;
+- `type`: the value type, for example `BOOL`. Empty only for untyped commands without a declaration.
 
 ```yaml
 hydronode:
@@ -274,7 +297,7 @@ hydronode:
                   - switch.turn_off: nutrient_pump
 ```
 
-The acknowledgment means **received by the ESP32**, not necessarily that a physical action completed. Add your own safety conditions, duration limits, interlocks and local fallback behavior before controlling pumps, heaters or dosing equipment.
+Confirmed means **received by the ESP32 and handed to your automation**, not necessarily that a physical action completed. Add your own safety conditions, duration limits, interlocks and local fallback behavior before controlling pumps, heaters or dosing equipment.
 
 ## Upload status automations
 

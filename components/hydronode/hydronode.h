@@ -2,8 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "esphome/components/http_request/http_request.h"
@@ -35,8 +37,11 @@ class HydroNodeComponent final : public PollingComponent {
   void add_measurement(sensor::Sensor *source, const std::string &type) {
     this->measurements_.push_back({source, type});
   }
+  /// Declares a command the device handles. Once any command is declared,
+  /// undeclared names and wrong value types are declined instead of confirmed.
+  void add_command(const std::string &name, const std::string &type) { this->commands_[name] = type; }
 
-  Trigger<std::string, std::string> *get_command_trigger() { return &this->command_trigger_; }
+  Trigger<std::string, std::string, std::string> *get_command_trigger() { return &this->command_trigger_; }
   Trigger<std::string, float> *get_upload_success_trigger() { return &this->upload_success_trigger_; }
   Trigger<std::string, float, int> *get_upload_error_trigger() { return &this->upload_error_trigger_; }
 
@@ -49,12 +54,14 @@ class HydroNodeComponent final : public PollingComponent {
 
  protected:
   std::string build_value_payload_(const std::string &type, float value, int64_t timestamp) const;
-  std::string build_ack_payload_(const std::vector<std::string> &command_ids) const;
+  std::string build_ack_payload_(const std::vector<std::string> &accepted,
+                                 const std::vector<std::pair<std::string, std::string>> &declined) const;
   std::string sign_(const std::string &message) const;
   HydroNodeHttpResult post_signed_(const std::string &path, const std::string &payload, int64_t timestamp);
   std::string read_response_(const std::shared_ptr<http_request::HttpContainer> &container) const;
   void handle_commands_(const std::string &response);
-  bool send_ack_(const std::vector<std::string> &command_ids);
+  bool send_ack_(const std::vector<std::string> &accepted,
+                 const std::vector<std::pair<std::string, std::string>> &declined);
   bool valid_time_(int64_t &timestamp) const;
 
   http_request::HttpRequestComponent *http_request_{nullptr};
@@ -64,8 +71,9 @@ class HydroNodeComponent final : public PollingComponent {
   std::string device_secret_;
   size_t response_buffer_size_{2048};
   std::vector<HydroNodeMeasurement> measurements_;
+  std::map<std::string, std::string> commands_;
 
-  Trigger<std::string, std::string> command_trigger_;
+  Trigger<std::string, std::string, std::string> command_trigger_;
   Trigger<std::string, float> upload_success_trigger_;
   Trigger<std::string, float, int> upload_error_trigger_;
 };
