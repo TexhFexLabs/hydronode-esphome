@@ -52,11 +52,16 @@ hydronode:
       type: TEMPERATURE
     - source: test_humidity
       type: HUMIDITY
+  commands:
+    - name: pump
+      type: UINT32
+    - name: lamp
+      type: bool
   on_command:
     then:
       - logger.log:
-          format: "command=%s value=%s"
-          args: [command.c_str(), value_json.c_str()]
+          format: "command=%s type=%s value=%s"
+          args: [command.c_str(), type.c_str(), value_json.c_str()]
   on_upload_success:
     then:
       - logger.log:

@@ -18,9 +18,11 @@ MULTI_CONF = True
 
 CONF_ALLOW_INSECURE = "allow_insecure"
 CONF_BASE_URL = "base_url"
+CONF_COMMANDS = "commands"
 CONF_DEVICE_SECRET = "device_secret"
 CONF_HTTP_REQUEST_ID = "http_request_id"
 CONF_MEASUREMENTS = "measurements"
+CONF_NAME = "name"
 CONF_ON_COMMAND = "on_command"
 CONF_ON_UPLOAD_ERROR = "on_upload_error"
 CONF_ON_UPLOAD_SUCCESS = "on_upload_success"
@@ -43,6 +45,10 @@ UUID_RE = re.compile(
     r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
 TYPE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+
+# Value types a HydroNode command can carry; the same set as the backend and
+# the Arduino library (onBool, onInt32, ...). Floats are deliberately absent.
+COMMAND_VALUE_TYPES = ["BOOL", "INT32", "UINT32", "INT64", "UINT64", "STRING"]
 
 
 def _validate_uuid(value: str) -> str:
@@ -112,6 +118,32 @@ def _validate_config(config):
     return config
 
 
+def _validate_command_name(value: str) -> str:
+    value = cv.string_strict(value).strip()
+    if not 1 <= len(value) <= 64:
+        raise cv.Invalid("command name must be 1 to 64 characters")
+    if any(ord(char) < 0x20 or char in '"\\' for char in value):
+        raise cv.Invalid("command name must not contain quotes, backslashes or control characters")
+    return value
+
+
+def _validate_unique_commands(commands: list) -> list:
+    seen = set()
+    for command in commands:
+        name = command[CONF_NAME]
+        if name in seen:
+            raise cv.Invalid(f"duplicate command {name!r}; declare each command once")
+        seen.add(name)
+    return commands
+
+
+COMMAND_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_NAME): _validate_command_name,
+        cv.Required(CONF_TYPE): cv.one_of(*COMMAND_VALUE_TYPES, upper=True),
+    }
+)
+
 MEASUREMENT_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_SOURCE): cv.use_id(sensor.Sensor),
@@ -137,10 +169,17 @@ CONFIG_SCHEMA = cv.All(
                 min=256, max=16384
             ),
             cv.Optional(CONF_ALLOW_INSECURE, default=False): cv.boolean,
+            cv.Optional(CONF_COMMANDS): cv.All(
+                cv.ensure_list(COMMAND_SCHEMA),
+                cv.Length(min=1, max=64),
+                _validate_unique_commands,
+            ),
             cv.Optional(CONF_ON_COMMAND): automation.validate_automation(
                 {
                     cv.GenerateID(): cv.declare_id(
-                        automation.Trigger.template(cg.std_string, cg.std_string)
+                        automation.Trigger.template(
+                            cg.std_string, cg.std_string, cg.std_string
+                        )
                     )
                 }
             ),
@@ -186,12 +225,16 @@ async def to_code(config):
         source = await cg.get_variable(measurement[CONF_SOURCE])
         cg.add(var.add_measurement(source, measurement[CONF_TYPE]))
 
+    for command in config.get(CONF_COMMANDS, []):
+        cg.add(var.add_command(command[CONF_NAME], command[CONF_TYPE]))
+
     for conf in config.get(CONF_ON_COMMAND, []):
         await automation.build_automation(
             var.get_command_trigger(),
             [
                 (cg.std_string, "command"),
                 (cg.std_string, "value_json"),
+                (cg.std_string, "type"),
             ],
             conf,
         )

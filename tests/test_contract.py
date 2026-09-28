@@ -66,6 +66,19 @@ class HydroNodeContractTest(unittest.TestCase):
         self.assertIn('"/api/webhook/sensor-command-ack"', source)
         self.assertRegex(source, re.compile(r'"X-Signature"'))
 
+    def test_command_types_match_backend_and_library(self):
+        source = (ROOT / "components" / "hydronode" / "__init__.py").read_text()
+        cpp = (ROOT / "components" / "hydronode" / "hydronode.cpp").read_text()
+        types = ["BOOL", "INT32", "UINT32", "INT64", "UINT64", "STRING"]
+        self.assertIn(
+            "COMMAND_VALUE_TYPES = " + json.dumps(types), source
+        )
+        for value_type in types:
+            self.assertIn(f'"{value_type}"', cpp)
+        for reason in ["NO_HANDLER", "TYPE_MISMATCH", "INVALID_VALUE"]:
+            self.assertIn(f'"{reason}"', cpp)
+        self.assertIn('root["declined"]', cpp)
+
     def test_full_ca_bundle_is_required(self):
         source = (
             ROOT / "components" / "hydronode" / "__init__.py"
