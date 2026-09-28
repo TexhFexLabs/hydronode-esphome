@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <utility>
 
 #include <mbedtls/base64.h>
@@ -103,7 +104,9 @@ int HydroNodeComponent::send_value(const std::string &type, float value) {
 }
 
 std::string HydroNodeComponent::build_value_payload_(const std::string &type, float value, int64_t timestamp) const {
-  char value_buffer[32];
+  // Largest finite float: max_exponent10 + 1 integer digits, sign, dot,
+  // two fractional digits and the terminating null byte.
+  char value_buffer[std::numeric_limits<float>::max_exponent10 + 6];
   std::snprintf(value_buffer, sizeof(value_buffer), "%.2f", static_cast<double>(value));
 
   return "{\"sensorId\":\"" + this->sensor_id_ + "\",\"type\":\"" + type + "\",\"value\":" + value_buffer +

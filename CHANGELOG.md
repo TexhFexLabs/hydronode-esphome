@@ -6,6 +6,18 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-28
+
+### Fixed
+
+- Increase the default command-response buffer from 2048 to 16384 bytes so a
+  full delivery of eight long commands, including UTF-8 text, is not truncated
+  and silently left unacknowledged. Existing explicit smaller buffer settings
+  must be removed or increased to use the new capacity.
+- Preserve the full integer part of large finite measurements when formatting
+  the signed two-decimal payload, instead of truncating the value in a fixed
+  32-byte buffer.
+
 ## [0.2.0] - 2026-09-28
 
 ### Added
@@ -38,6 +50,7 @@ to use [Semantic Versioning](https://semver.org/).
   Cloudflare certificate-chain rotations.
 - Tag-triggered release workflow gated on the validation matrix.
 
-[Unreleased]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/TexhFexLabs/hydronode-esphome/releases/tag/v0.1.0

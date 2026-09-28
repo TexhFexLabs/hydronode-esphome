@@ -46,7 +46,7 @@ hydronode:
   sensor_id: 550e8400-e29b-41d4-a716-446655440000
   device_secret: test-secret-at-least-16-characters
   update_interval: 60s
-  response_buffer_size: 2048
+  response_buffer_size: 16384
   measurements:
     - source: test_temperature
       type: TEMPERATURE
