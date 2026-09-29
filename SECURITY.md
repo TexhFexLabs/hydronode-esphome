@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities privately to **contact@knollfelix.de**.
+Please report suspected vulnerabilities privately to **security@hydronode.tech**.
 Do not open a public GitHub issue and do not include real HydroNode credentials.
 
 Include the affected version, impact, reproduction steps and any proposed

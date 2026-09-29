@@ -395,4 +395,4 @@ CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF an
 MIT. See [LICENSE](LICENSE).
 
 HydroNode ESPHome is developed and maintained by **TexhFexLabs**.
-Support, feature requests and business inquiries: contact@knollfelix.de
+Support, feature requests and business inquiries: support@hydronode.tech
