@@ -33,7 +33,7 @@ CONF_TIME_ID = "time_id"
 CONF_TYPE = "type"
 CONF_VALUE = "value"
 
-DEFAULT_BASE_URL = "https://hydronode.texhfexlabs.de"
+DEFAULT_BASE_URL = "https://hydronode.tech"
 MIN_SEND_INTERVAL_MS = 10_000
 
 hydronode_ns = cg.esphome_ns.namespace("hydronode")
