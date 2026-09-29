@@ -42,7 +42,7 @@ hydronode:
   id: hydronode_cloud
   http_request_id: hydronode_http
   time_id: hydronode_time
-  base_url: https://hydronode.texhfexlabs.de
+  base_url: https://hydronode.tech
   sensor_id: 550e8400-e29b-41d4-a716-446655440000
   device_secret: test-secret-at-least-16-characters
   update_interval: 60s

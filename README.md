@@ -17,9 +17,9 @@
 </p>
 
 <p align="center">
-  <a href="https://hydronode.texhfexlabs.de/"><strong>Website</strong></a> ·
-  <a href="https://hydronode.texhfexlabs.de/docs/guide/sensor-types/">Sensor Types</a> ·
-  <a href="https://hydronode.texhfexlabs.de/docs/faq/">FAQ</a> ·
+  <a href="https://hydronode.tech/"><strong>Website</strong></a> ·
+  <a href="https://hydronode.tech/docs/guide/sensor-types/">Sensor Types</a> ·
+  <a href="https://hydronode.tech/docs/faq/">FAQ</a> ·
   <a href="https://github.com/TexhFexLabs/HydroNode-Library">Arduino Library</a>
 </p>
 
@@ -36,7 +36,7 @@ hydronode:
       type: HUMIDITY
 ```
 
-[HydroNode](https://hydronode.texhfexlabs.de/) is a secure IoT platform for hydroponics, weather stations and environmental monitoring. This component connects normal ESPHome sensor entities to the existing HydroNode API. It uses the same signed wire protocol as [HydroNode-Library](https://github.com/TexhFexLabs/HydroNode-Library), while ESPHome continues to manage WiFi, OTA updates, sensor drivers and local automations.
+[HydroNode](https://hydronode.tech/) is a secure IoT platform for hydroponics, weather stations and environmental monitoring. This component connects normal ESPHome sensor entities to the existing HydroNode API. It uses the same signed wire protocol as [HydroNode-Library](https://github.com/TexhFexLabs/HydroNode-Library), while ESPHome continues to manage WiFi, OTA updates, sensor drivers and local automations.
 
 Create a sensor on the HydroNode Website or in the iOS App, add its credentials to ESPHome secrets, and flash the ESP32.
 
@@ -67,7 +67,7 @@ ESP8266 is not currently supported. The implementation relies on the ESP32 mbedT
 
 ### 1. Obtain HydroNode credentials
 
-Create one sensor on the [HydroNode Website](https://hydronode.texhfexlabs.de/) or in the iOS App. Copy:
+Create one sensor on the [HydroNode Website](https://hydronode.tech/) or in the iOS App. Copy:
 
 - the sensor UUID;
 - the device secret.
@@ -213,7 +213,7 @@ esphome run examples/basic-dht22.yaml
 | `measurements` | yes | n/a | 1–25 source/type mappings |
 | `http_request_id` | usually no | auto-resolved | ID of the ESPHome `http_request` component |
 | `time_id` | usually no | auto-resolved | ID of the ESPHome real-time clock |
-| `base_url` | no | `https://hydronode.texhfexlabs.de` | HydroNode origin without a path |
+| `base_url` | no | `https://hydronode.tech` | HydroNode origin without a path |
 | `update_interval` | no | `60s` | Upload cycle; minimum `10s` |
 | `response_buffer_size` | no | `16384` | Maximum command-response body in bytes; range 256–16384 |
 | `allow_insecure` | no | `false` | Explicit opt-in to HTTP for local development only |
@@ -236,7 +236,7 @@ cannot be acknowledged or dispatched.
 
 Each type must be unique within one `hydronode` block. HydroNode supports up to 25 measurement types per sensor. Keep the component interval at 10 seconds or more to respect the per-sensor/type rate limit.
 
-Common types include `TEMPERATURE`, `HUMIDITY`, `PRESSURE`, `CO2`, `PM25`, `SOIL_MOISTURE`, `WATER_TEMPERATURE`, `WATER_PH`, `WATER_EC` and `BATTERY_VOLTAGE`. See the [HydroNode sensor type reference](https://hydronode.texhfexlabs.de/docs/guide/sensor-types/) for the complete list and expected units.
+Common types include `TEMPERATURE`, `HUMIDITY`, `PRESSURE`, `CO2`, `PM25`, `SOIL_MOISTURE`, `WATER_TEMPERATURE`, `WATER_PH`, `WATER_EC` and `BATTERY_VOLTAGE`. See the [HydroNode sensor type reference](https://hydronode.tech/docs/guide/sensor-types/) for the complete list and expected units.
 
 ## Manual uploads
 
@@ -386,7 +386,7 @@ CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF an
 
 ## Related
 
-- [HydroNode website and documentation](https://hydronode.texhfexlabs.de/)
+- [HydroNode website and documentation](https://hydronode.tech/)
 - [HydroNode Arduino/ESP32 library](https://github.com/TexhFexLabs/HydroNode-Library)
 - [ESPHome external component documentation](https://esphome.io/components/external_components/)
 
