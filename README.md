@@ -217,7 +217,7 @@ esphome run examples/basic-dht22.yaml
 | `update_interval` | no | `60s` | Upload cycle; minimum `10s` |
 | `response_buffer_size` | no | `16384` | Maximum command-response body in bytes; range 256–16384 |
 | `allow_insecure` | no | `false` | Explicit opt-in to HTTP for local development only |
-| `commands` | no | n/a | 1–64 `name`/`type` pairs the device handles; others are declined. Without it every command is confirmed |
+| `commands` | no | n/a | 1–64 `name`/`type` pairs the device handles; others are declined. A name may appear once per type. Without it every command is confirmed |
 | `on_command` | no | n/a | Automation invoked for each confirmed command |
 | `on_upload_success` | no | n/a | Automation invoked after an HTTP `202` |
 | `on_upload_error` | no | n/a | Automation invoked after local or HTTP errors |
@@ -277,6 +277,18 @@ hydronode:
     - name: co2_calibration
       type: UINT32
 ```
+
+One name can be declared once per type. A relay that is switched with `relay1 true` and pulsed with `relay1 1400` declares both:
+
+```yaml
+  commands:
+    - name: relay1
+      type: BOOL
+    - name: relay1
+      type: UINT32
+```
+
+A typed command needs its type declared; a command without a type (older app versions) takes the first declared type its value fits. `type` in `on_command` tells the two apart.
 
 `on_command` exposes three variables:
 

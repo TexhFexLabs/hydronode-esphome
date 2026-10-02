@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -39,7 +40,12 @@ class HydroNodeComponent final : public PollingComponent {
   }
   /// Declares a command the device handles. Once any command is declared,
   /// undeclared names and wrong value types are declined instead of confirmed.
-  void add_command(const std::string &name, const std::string &type) { this->commands_[name] = type; }
+  /// A name can be declared with several types, e.g. BOOL to switch and UINT32 to pulse.
+  void add_command(const std::string &name, const std::string &type) {
+    auto &types = this->commands_[name];
+    if (std::find(types.begin(), types.end(), type) == types.end())
+      types.push_back(type);
+  }
 
   Trigger<std::string, std::string, std::string> *get_command_trigger() { return &this->command_trigger_; }
   Trigger<std::string, float> *get_upload_success_trigger() { return &this->upload_success_trigger_; }
@@ -71,7 +77,7 @@ class HydroNodeComponent final : public PollingComponent {
   std::string device_secret_;
   size_t response_buffer_size_{16384};
   std::vector<HydroNodeMeasurement> measurements_;
-  std::map<std::string, std::string> commands_;
+  std::map<std::string, std::vector<std::string>> commands_;
 
   Trigger<std::string, std::string, std::string> command_trigger_;
   Trigger<std::string, float> upload_success_trigger_;

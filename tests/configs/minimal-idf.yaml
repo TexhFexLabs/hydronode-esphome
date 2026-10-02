@@ -57,6 +57,9 @@ hydronode:
       type: UINT32
     - name: lamp
       type: bool
+    # Same name, second type: switch with BOOL, pulse with UINT32.
+    - name: lamp
+      type: UINT32
   on_command:
     then:
       - logger.log:
