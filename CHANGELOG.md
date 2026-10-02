@@ -6,6 +6,16 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-02
+
+### Added
+
+- A command name may be declared once per value type, for example `relay1` as
+  `BOOL` to switch and as `UINT32` to switch on for a number of milliseconds.
+  A typed command needs its type declared; an untyped command (older app
+  versions) takes the first declared type its value fits. Matches
+  HydroNode-Library 1.5.0.
+
 ## [0.2.2] - 2026-09-29
 
 ### Changed
@@ -58,7 +68,8 @@ to use [Semantic Versioning](https://semver.org/).
   Cloudflare certificate-chain rotations.
 - Tag-triggered release workflow gated on the validation matrix.
 
-[Unreleased]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/TexhFexLabs/hydronode-esphome/compare/v0.1.0...v0.2.0
