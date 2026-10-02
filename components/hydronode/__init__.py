@@ -128,12 +128,14 @@ def _validate_command_name(value: str) -> str:
 
 
 def _validate_unique_commands(commands: list) -> list:
+    # One name may carry several types (a relay switched with BOOL and pulsed with UINT32),
+    # each declared once.
     seen = set()
     for command in commands:
-        name = command[CONF_NAME]
-        if name in seen:
-            raise cv.Invalid(f"duplicate command {name!r}; declare each command once")
-        seen.add(name)
+        key = (command[CONF_NAME], command[CONF_TYPE])
+        if key in seen:
+            raise cv.Invalid(f"duplicate command {key[0]!r} with type {key[1]}; declare each name and type once")
+        seen.add(key)
     return commands
 
 

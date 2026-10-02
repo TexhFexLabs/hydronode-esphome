@@ -52,8 +52,10 @@ void HydroNodeComponent::dump_config() {
     ESP_LOGCONFIG(TAG, "  Commands: none declared, every command is confirmed");
   } else {
     ESP_LOGCONFIG(TAG, "  Commands: %u declared, others are declined", static_cast<unsigned>(this->commands_.size()));
-    for (const auto &[name, type] : this->commands_) {
-      ESP_LOGCONFIG(TAG, "    - %s (%s)", name.c_str(), type.c_str());
+    for (const auto &[name, types] : this->commands_) {
+      for (const auto &type : types) {
+        ESP_LOGCONFIG(TAG, "    - %s (%s)", name.c_str(), type.c_str());
+      }
     }
   }
 }
@@ -270,6 +272,37 @@ const char *check_command(const std::string &declared, const std::string &wire_t
   return wire_type.empty() ? "TYPE_MISMATCH" : "INVALID_VALUE";
 }
 
+// A typed command needs that type declared for its name; an untyped one (older app versions)
+// takes the first declared type its value fits. Returns the decline reason, or nullptr and
+// the matched type.
+const char *match_command(const std::map<std::string, std::vector<std::string>> &commands, const std::string &name,
+                          const std::string &wire_type, JsonVariantConst value, std::string &matched) {
+  auto declared = commands.find(name);
+  if (declared == commands.end() || declared->second.empty()) {
+    return "NO_HANDLER";
+  }
+  const auto &types = declared->second;
+  if (!wire_type.empty()) {
+    if (std::find(types.begin(), types.end(), wire_type) == types.end()) {
+      return "TYPE_MISMATCH";
+    }
+    matched = wire_type;
+    return check_command(wire_type, wire_type, value);
+  }
+  const char *first = nullptr;
+  for (const auto &type : types) {
+    const char *reason = check_command(type, wire_type, value);
+    if (reason == nullptr) {
+      matched = type;
+      return nullptr;
+    }
+    if (first == nullptr) {
+      first = reason;
+    }
+  }
+  return first;
+}
+
 }  // namespace
 
 void HydroNodeComponent::handle_commands_(const std::string &response) {
@@ -294,18 +327,14 @@ void HydroNodeComponent::handle_commands_(const std::string &response) {
 
       // Without declared commands every command is confirmed, as before.
       if (!this->commands_.empty()) {
-        auto declared = this->commands_.find(command.command);
-        const char *reason = declared == this->commands_.end()
-                                 ? "NO_HANDLER"
-                                 : check_command(declared->second, command.type, entry["value"]);
+        std::string matched;
+        const char *reason = match_command(this->commands_, command.command, command.type, entry["value"], matched);
         if (reason != nullptr) {
           ESP_LOGW(TAG, "Declined command %s: %s", command.command.c_str(), reason);
           declined.emplace_back(command.id, reason);
           continue;
         }
-        if (command.type.empty()) {
-          command.type = declared->second;
-        }
+        command.type = matched;
       }
       accepted_ids.push_back(command.id);
       accepted.push_back(std::move(command));
