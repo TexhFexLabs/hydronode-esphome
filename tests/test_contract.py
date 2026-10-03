@@ -79,6 +79,37 @@ class HydroNodeContractTest(unittest.TestCase):
             self.assertIn(f'"{reason}"', cpp)
         self.assertIn('root["declined"]', cpp)
 
+    def test_fleet_headers_follow_the_wire_format(self):
+        header = (ROOT / "components" / "hydronode" / "hydronode.h").read_text()
+        cpp = (ROOT / "components" / "hydronode" / "hydronode.cpp").read_text()
+        init = (ROOT / "components" / "hydronode" / "__init__.py").read_text()
+        changelog = (ROOT / "CHANGELOG.md").read_text()
+
+        version = re.search(r'COMPONENT_VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"', init).group(1)
+        self.assertIn(f'COMPONENT_VERSION = "{version}"', header)
+        newest = re.search(r"^## \[([0-9]+\.[0-9]+\.[0-9]+)\]", changelog, re.MULTILINE).group(1)
+        self.assertEqual(version, newest)
+
+        self.assertIn('"X-Firmware"', cpp)
+        self.assertIn('"X-Device-Status"', cpp)
+        self.assertIn('"esphome-hydronode"', cpp)
+        for family in ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c6"]:
+            self.assertIn(f'"{family}"', cpp)
+        for reason in ["poweron", "software", "panic", "watchdog", "brownout", "deepsleep", "external", "unknown"]:
+            self.assertIn(f'"{reason}"', cpp)
+        # Key order and separators of X-Device-Status, as the backend parses it.
+        self.assertRegex(cpp, r'"boot=".*";reset="')
+        self.assertIn('";uptime="', cpp)
+        self.assertIn('";rssi="', cpp)
+        self.assertIn('";net="', cpp)
+        # No update keys: ESPHome devices are never offered OTA through HydroNode.
+        self.assertNotIn(" ota", cpp)
+        self.assertNotIn("cfg=", cpp)
+
+        example_firmware = f"esphome-hydronode/{version} esp32c3"
+        self.assertRegex(example_firmware, r"^[a-z0-9-]+/[0-9.]+ (esp32|esp32s2|esp32s3|esp32c3|esp32c6)$")
+        self.assertLessEqual(len(example_firmware), 128)
+
     def test_full_ca_bundle_is_required(self):
         source = (
             ROOT / "components" / "hydronode" / "__init__.py"

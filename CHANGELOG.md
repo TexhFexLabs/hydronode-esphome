@@ -6,6 +6,16 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-02
+
+### Added
+
+- Every request carries `X-Firmware: esphome-hydronode/0.4.0 <chip>` and
+  `X-Device-Status: boot=<n>;reset=<reason>;uptime=<s>;rssi=<dBm>;net=wifi`
+  for the HydroNode fleet view. The boot counter lives in the ESPHome
+  preferences and counts cold starts, not wake-ups from deep sleep. Nothing to
+  configure; the component takes no updates over the air through HydroNode.
+
 ## [0.3.0] - 2026-10-02
 
 ### Added

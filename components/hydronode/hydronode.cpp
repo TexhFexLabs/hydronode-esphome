@@ -7,13 +7,22 @@
 #include <limits>
 #include <utility>
 
+#include <esp_system.h>
 #include <mbedtls/base64.h>
 #include <mbedtls/md.h>
 
 #include "esphome/components/json/json_util.h"
 #include "esphome/components/network/util.h"
 #include "esphome/core/application.h"
+#include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+#include "esphome/core/preferences.h"
+#ifdef USE_WIFI
+#include "esphome/components/wifi/wifi_component.h"
+#endif
+#ifdef USE_ETHERNET
+#include "esphome/components/ethernet/ethernet_component.h"
+#endif
 
 namespace esphome::hydronode {
 
@@ -24,6 +33,9 @@ static const char *const HEADER_CONTENT_TYPE = "Content-Type";
 static const char *const HEADER_SENSOR_ID = "X-Sensor-Id";
 static const char *const HEADER_TIMESTAMP = "X-Timestamp";
 static const char *const HEADER_SIGNATURE = "X-Signature";
+static const char *const HEADER_FIRMWARE = "X-Firmware";
+static const char *const HEADER_DEVICE_STATUS = "X-Device-Status";
+static const char *const FIRMWARE_PRODUCT = "esphome-hydronode";
 static const char *const CONTENT_TYPE_JSON = "application/json";
 static constexpr int HTTP_ACCEPTED = 202;
 static constexpr int HTTP_OK = 200;
@@ -36,12 +48,88 @@ static constexpr size_t READ_CHUNK_SIZE = 512;
 
 void HydroNodeComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up HydroNode...");
+  // Boot counter for the fleet view: counts cold starts (power-on, crash, watchdog, restart),
+  // not wake-ups from deep sleep.
+  this->boot_pref_ = global_preferences->make_preference<uint32_t>(fnv1_hash("hydronode_boot_count"), true);
+  uint32_t count = 0;
+  if (!this->boot_pref_.load(&count)) {
+    count = 0;
+  }
+  if (esp_reset_reason() != ESP_RST_DEEPSLEEP) {
+    count++;
+    this->boot_pref_.save(&count);
+  }
+  this->boot_count_ = count;
+}
+
+const char *HydroNodeComponent::chip_family_() {
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+  return "esp32c3";
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+  return "esp32c6";
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+  return "esp32s2";
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+  return "esp32s3";
+#else
+  return "esp32";
+#endif
+}
+
+const char *HydroNodeComponent::reset_reason_() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:
+      return "poweron";
+    case ESP_RST_SW:
+      return "software";
+    case ESP_RST_PANIC:
+      return "panic";
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT:
+      return "watchdog";
+    case ESP_RST_BROWNOUT:
+      return "brownout";
+    case ESP_RST_DEEPSLEEP:
+      return "deepsleep";
+    case ESP_RST_EXT:
+      return "external";
+    default:
+      return "unknown";
+  }
+}
+
+std::string HydroNodeComponent::firmware_header() const {
+  return std::string(FIRMWARE_PRODUCT) + "/" + COMPONENT_VERSION + " " + chip_family_();
+}
+
+std::string HydroNodeComponent::device_status_header() const {
+  std::string value = "boot=" + std::to_string(this->boot_count_) + ";reset=" + reset_reason_() +
+                      ";uptime=" + std::to_string(millis() / 1000U);
+  const char *net = nullptr;
+#ifdef USE_WIFI
+  if (wifi::global_wifi_component != nullptr && wifi::global_wifi_component->is_connected()) {
+    value += ";rssi=" + std::to_string(static_cast<int>(wifi::global_wifi_component->wifi_rssi()));
+    net = "wifi";
+  }
+#endif
+#ifdef USE_ETHERNET
+  if (net == nullptr && ethernet::global_eth_component != nullptr && ethernet::global_eth_component->is_connected()) {
+    net = "eth";
+  }
+#endif
+  if (net != nullptr) {
+    value += ";net=";
+    value += net;
+  }
+  return value;
 }
 
 void HydroNodeComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "HydroNode:");
   ESP_LOGCONFIG(TAG, "  Base URL: %s", this->base_url_.c_str());
   ESP_LOGCONFIG(TAG, "  Sensor ID: %s", this->sensor_id_.c_str());
+  ESP_LOGCONFIG(TAG, "  Firmware: %s", this->firmware_header().c_str());
   ESP_LOGCONFIG(TAG, "  Measurements: %u", static_cast<unsigned>(this->measurements_.size()));
   ESP_LOGCONFIG(TAG, "  Update interval: %u ms", static_cast<unsigned>(this->get_update_interval()));
   ESP_LOGCONFIG(TAG, "  Response buffer: %u bytes", static_cast<unsigned>(this->response_buffer_size_));
@@ -186,6 +274,8 @@ HydroNodeHttpResult HydroNodeComponent::post_signed_(const std::string &path, co
       {HEADER_SENSOR_ID, this->sensor_id_},
       {HEADER_TIMESTAMP, timestamp_string},
       {HEADER_SIGNATURE, signature},
+      {HEADER_FIRMWARE, this->firmware_header()},
+      {HEADER_DEVICE_STATUS, this->device_status_header()},
   };
 
   auto container = this->http_request_->post(this->base_url_ + path, payload, headers);

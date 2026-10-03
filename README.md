@@ -50,6 +50,7 @@ Create a sensor on the HydroNode Website or in the iOS App, add its credentials 
 - **Manual uploads:** Use the `hydronode.send` action from buttons, intervals or automations.
 - **Useful diagnostics:** Success and error triggers expose the measurement type, value and HTTP status without logging the secret.
 - **Both ESP32 frameworks:** Continuously validated with ESP-IDF and Arduino.
+- **Shows up in the fleet view:** Every request reports the component version, restarts, reset reason and signal, so the HydroNode fleet view lists the board with its health and errors. Updates over the air stay with ESPHome.
 
 ## Compatibility
 
@@ -347,6 +348,17 @@ Status codes:
 | `401` | Invalid credentials, signature or timestamp | Check UUID, secret and time |
 | `429` | Backend rate limit | Increase intervals and avoid overlapping manual sends |
 | `5xx` | HydroNode service error | Retry later with backoff |
+
+## Fleet view headers
+
+Since 0.4.0 every request tells the HydroNode fleet view what runs on the board and how it is doing:
+
+```text
+X-Firmware: esphome-hydronode/0.4.0 esp32c3
+X-Device-Status: boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi
+```
+
+`boot` counts cold starts (power-on, crash, watchdog, restart) and is kept in the ESPHome preferences; waking from deep sleep does not count. `reset` is one of `poweron`, `software`, `panic`, `watchdog`, `brownout`, `deepsleep`, `external`, `unknown`. `rssi` and `net=wifi` are left out while WiFi is not connected; on Ethernet the header says `net=eth`. Nothing to configure. The fleet view lists the board as ESPHome; firmware and config updates over the air go through ESPHome itself, not through HydroNode. A bulk change in the fleet view marks the board "Not HydroNode firmware" and skips it.
 
 ## Security model
 

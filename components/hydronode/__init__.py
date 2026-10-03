@@ -12,6 +12,8 @@ import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_UPDATE_INTERVAL
 
 CODEOWNERS = ["@TexhFexLabs"]
+# Sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as COMPONENT_VERSION in hydronode.h.
+COMPONENT_VERSION = "0.4.0"
 DEPENDENCIES = ["esp32", "http_request", "network", "sensor", "time"]
 AUTO_LOAD = ["json"]
 MULTI_CONF = True

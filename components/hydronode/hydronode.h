@@ -14,8 +14,13 @@
 #include "esphome/components/time/real_time_clock.h"
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
+#include "esphome/core/preferences.h"
 
 namespace esphome::hydronode {
+
+/// Component version, sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as
+/// COMPONENT_VERSION in __init__.py and the newest release in CHANGELOG.md.
+static constexpr const char *COMPONENT_VERSION = "0.4.0";
 
 struct HydroNodeMeasurement {
   sensor::Sensor *source;
@@ -58,6 +63,11 @@ class HydroNodeComponent final : public PollingComponent {
 
   int send_value(const std::string &type, float value);
 
+  /// X-Firmware value, e.g. "esphome-hydronode/0.4.0 esp32c3".
+  std::string firmware_header() const;
+  /// X-Device-Status value, e.g. "boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi".
+  std::string device_status_header() const;
+
  protected:
   std::string build_value_payload_(const std::string &type, float value, int64_t timestamp) const;
   std::string build_ack_payload_(const std::vector<std::string> &accepted,
@@ -69,6 +79,8 @@ class HydroNodeComponent final : public PollingComponent {
   bool send_ack_(const std::vector<std::string> &accepted,
                  const std::vector<std::pair<std::string, std::string>> &declined);
   bool valid_time_(int64_t &timestamp) const;
+  static const char *chip_family_();
+  static const char *reset_reason_();
 
   http_request::HttpRequestComponent *http_request_{nullptr};
   time::RealTimeClock *time_{nullptr};
@@ -78,6 +90,8 @@ class HydroNodeComponent final : public PollingComponent {
   size_t response_buffer_size_{16384};
   std::vector<HydroNodeMeasurement> measurements_;
   std::map<std::string, std::vector<std::string>> commands_;
+  ESPPreferenceObject boot_pref_;
+  uint32_t boot_count_{0};
 
   Trigger<std::string, std::string, std::string> command_trigger_;
   Trigger<std::string, float> upload_success_trigger_;
