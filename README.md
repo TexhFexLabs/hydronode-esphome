@@ -411,6 +411,8 @@ CI validates HMAC contract vectors and compiles complete firmware for ESP-IDF an
 ## Related
 
 - [HydroNode website and documentation](https://hydronode.tech/)
+- [Send your ESPHome sensors to HydroNode](https://hydronode.tech/blog/esphome-to-hydronode/): step-by-step guide with a complete BME280 example and commands
+- [HydroNode in Home Assistant](https://hydronode.tech/blog/home-assistant-integration/): bring the readings, anomalies and AI analyses back into HA
 - [HydroNode Arduino/ESP32 library](https://github.com/TexhFexLabs/HydroNode-Library)
 - [ESPHome external component documentation](https://esphome.io/components/external_components/)
 
