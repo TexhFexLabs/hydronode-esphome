@@ -6,6 +6,18 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-09
+
+### Added
+
+- Optional `power:` block (`source`, `gauge`, `cells`, `interval`, `save`, `recovery`,
+  `standby`, `resume`). Thresholds are volts per cell, checked by `esphome config` with the same
+  rules HydroNode uses. The first accepted upload after boot carries
+  `X-Device-Config: v=1 int=300 save=3500 rec=3300 sby=3200 res=3600 src=bat cells=1` (pack mV),
+  and HydroNode shows the values in the sensor settings under "On the device". Report only: the
+  component takes no changes back (no `caps=settings`), so HydroNode shows the fields read only.
+- Example `battery-power.yaml` with a MAX17048 gauge.
+
 ## [0.4.0] - 2026-10-02
 
 ### Added

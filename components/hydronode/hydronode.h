@@ -20,7 +20,7 @@ namespace esphome::hydronode {
 
 /// Component version, sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as
 /// COMPONENT_VERSION in __init__.py and the newest release in CHANGELOG.md.
-static constexpr const char *COMPONENT_VERSION = "0.4.0";
+static constexpr const char *COMPONENT_VERSION = "0.5.0";
 
 struct HydroNodeMeasurement {
   sensor::Sensor *source;
@@ -40,6 +40,9 @@ class HydroNodeComponent final : public PollingComponent {
   void set_sensor_id(const std::string &sensor_id) { this->sensor_id_ = sensor_id; }
   void set_device_secret(const std::string &device_secret) { this->device_secret_ = device_secret; }
   void set_response_buffer_size(size_t size) { this->response_buffer_size_ = size; }
+  /// X-Device-Config value from the `power:` block, built at compile time. Sent until one
+  /// upload after boot was accepted.
+  void set_device_config(const std::string &value) { this->device_config_ = value; }
   void add_measurement(sensor::Sensor *source, const std::string &type) {
     this->measurements_.push_back({source, type});
   }
@@ -67,6 +70,9 @@ class HydroNodeComponent final : public PollingComponent {
   std::string firmware_header() const;
   /// X-Device-Status value, e.g. "boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi".
   std::string device_status_header() const;
+  /// X-Device-Config value, e.g. "v=1 int=300 save=3500 rec=3300 sby=3200 res=3600 src=bat cells=1".
+  /// Empty without a `power:` block.
+  const std::string &device_config_header() const { return this->device_config_; }
 
  protected:
   std::string build_value_payload_(const std::string &type, float value, int64_t timestamp) const;
@@ -90,6 +96,8 @@ class HydroNodeComponent final : public PollingComponent {
   size_t response_buffer_size_{16384};
   std::vector<HydroNodeMeasurement> measurements_;
   std::map<std::string, std::vector<std::string>> commands_;
+  std::string device_config_;
+  bool device_config_sent_{false};
   ESPPreferenceObject boot_pref_;
   uint32_t boot_count_{0};
 

@@ -11,9 +11,11 @@ from esphome.components import esp32, http_request, sensor, time
 import esphome.config_validation as cv
 from esphome.const import CONF_ID, CONF_UPDATE_INTERVAL
 
+from . import power_config
+
 CODEOWNERS = ["@TexhFexLabs"]
 # Sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as COMPONENT_VERSION in hydronode.h.
-COMPONENT_VERSION = "0.4.0"
+COMPONENT_VERSION = "0.5.0"
 DEPENDENCIES = ["esp32", "http_request", "network", "sensor", "time"]
 AUTO_LOAD = ["json"]
 MULTI_CONF = True
@@ -28,6 +30,11 @@ CONF_NAME = "name"
 CONF_ON_COMMAND = "on_command"
 CONF_ON_UPLOAD_ERROR = "on_upload_error"
 CONF_ON_UPLOAD_SUCCESS = "on_upload_success"
+CONF_POWER = "power"
+CONF_POWER_CELLS = "cells"
+CONF_POWER_GAUGE = "gauge"
+CONF_POWER_INTERVAL = "interval"
+CONF_POWER_SOURCE = "source"
 CONF_RESPONSE_BUFFER_SIZE = "response_buffer_size"
 CONF_SENSOR_ID = "sensor_id"
 CONF_SOURCE = "source"
@@ -85,6 +92,29 @@ def _validate_send_interval(value):
             "each sensor/type pair"
         )
     return value
+
+
+def _validate_gauge(value: str) -> str:
+    value = cv.string_strict(value).strip().lower()
+    if not power_config.GAUGE_RE.match(value):
+        raise cv.Invalid("gauge must be lower case letters, digits or _ (at most 32), e.g. max17048")
+    return value
+
+
+def _power_interval_seconds(config) -> int:
+    power = config[CONF_POWER]
+    if CONF_POWER_INTERVAL in power:
+        return int(power[CONF_POWER_INTERVAL].total_seconds)
+    return int(config[CONF_UPDATE_INTERVAL].total_milliseconds // 1000)
+
+
+def _validate_power(config):
+    if CONF_POWER not in config:
+        return config
+    errors = power_config.check(config[CONF_POWER], _power_interval_seconds(config))
+    if errors:
+        raise cv.Invalid(errors[0], path=[CONF_POWER])
+    return config
 
 
 def _validate_config(config):
@@ -148,6 +178,22 @@ COMMAND_SCHEMA = cv.Schema(
     }
 )
 
+# Reported as X-Device-Config with the first upload after boot. Thresholds are volts per cell,
+# like the HydroNode sensor settings. Read only in HydroNode: ESPHome takes no changes back.
+POWER_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_POWER_SOURCE, default="battery"): cv.one_of(
+            *power_config.SOURCES, lower=True
+        ),
+        cv.Optional(CONF_POWER_GAUGE): _validate_gauge,
+        cv.Optional(CONF_POWER_CELLS, default=1): cv.int_range(
+            min=1, max=power_config.CELLS_MAX
+        ),
+        cv.Optional(CONF_POWER_INTERVAL): cv.positive_time_period_seconds,
+        **{cv.Optional(key): cv.voltage for key in power_config.THRESHOLDS},
+    }
+)
+
 MEASUREMENT_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_SOURCE): cv.use_id(sensor.Sensor),
@@ -206,9 +252,11 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(
                 CONF_UPDATE_INTERVAL, default="60s"
             ): _validate_send_interval,
+            cv.Optional(CONF_POWER): POWER_SCHEMA,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     _validate_config,
+    _validate_power,
 )
 
 
@@ -228,6 +276,12 @@ async def to_code(config):
     for measurement in config[CONF_MEASUREMENTS]:
         source = await cg.get_variable(measurement[CONF_SOURCE])
         cg.add(var.add_measurement(source, measurement[CONF_TYPE]))
+
+    if CONF_POWER in config:
+        header = power_config.device_config_header(
+            config[CONF_POWER], _power_interval_seconds(config)
+        )
+        cg.add(var.set_device_config(header))
 
     for command in config.get(CONF_COMMANDS, []):
         cg.add(var.add_command(command[CONF_NAME], command[CONF_TYPE]))

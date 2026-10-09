@@ -1,0 +1,77 @@
+# Battery board with a MAX17048 fuel gauge. The `power:` block tells HydroNode how the board is
+# powered and which thresholds it runs; HydroNode shows them in the sensor settings under
+# "On the device" (read only, ESPHome takes no changes back). Thresholds are volts per cell.
+#
+# ESPHome does not act on these thresholds by itself. Put the same values into your own
+# automations (deep_sleep, switches) so the report matches what the board does.
+substitutions:
+  device_name: hydronode-battery
+  friendly_name: HydroNode Battery
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/TexhFexLabs/hydronode-esphome
+      ref: main
+    components: [hydronode]
+    refresh: 1d
+
+http_request:
+  id: hydronode_http
+  timeout: 10s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+i2c:
+  sda: GPIO6
+  scl: GPIO7
+
+sensor:
+  - platform: max17043
+    battery_voltage:
+      id: battery_voltage
+      name: Battery Voltage
+    battery_level:
+      id: battery_level
+      name: Battery Level
+    update_interval: 300s
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: !secret hydronode_sensor_id
+  device_secret: !secret hydronode_device_secret
+  update_interval: 300s
+  measurements:
+    - source: battery_voltage
+      type: BATTERY_VOLTAGE
+    - source: battery_level
+      type: BATTERY_PERCENTAGE
+  power:
+    source: solar          # usb, battery or solar
+    gauge: max17048
+    cells: 1
+    save: 3.50V            # sends less below this
+    recovery: 3.30V        # radio off below this
+    standby: 3.20V         # deepest sleep below this
+    resume: 3.60V          # runs again at this

@@ -47,6 +47,15 @@ hydronode:
   device_secret: test-secret-at-least-16-characters
   update_interval: 60s
   response_buffer_size: 16384
+  power:
+    source: battery
+    gauge: max17048
+    cells: 1
+    interval: 5min
+    save: 3.50V
+    recovery: 3.30V
+    standby: 3.20V
+    resume: 3.60V
   measurements:
     - source: test_temperature
       type: TEMPERATURE

@@ -194,6 +194,7 @@ All examples are complete, commented ESPHome configurations:
 | [`hydroponics.yaml`](examples/hydroponics.yaml) | DS18B20 water temperature plus a calibrated analog pH input |
 | [`commands-and-actuators.yaml`](examples/commands-and-actuators.yaml) | A remote pump command, GPIO output and manual upload button |
 | [`template-sensors.yaml`](examples/template-sensors.yaml) | Small hardware-free example for a first configuration test |
+| [`battery-power.yaml`](examples/battery-power.yaml) | Solar battery with a MAX17048 gauge; reports power source and thresholds with the `power:` block |
 
 Copy `examples/secrets.example.yaml` to `secrets.yaml`, fill in your own values, adjust pins and calibration, then run:
 
@@ -222,6 +223,7 @@ esphome run examples/basic-dht22.yaml
 | `on_command` | no | n/a | Automation invoked for each confirmed command |
 | `on_upload_success` | no | n/a | Automation invoked after an HTTP `202` |
 | `on_upload_error` | no | n/a | Automation invoked after local or HTTP errors |
+| `power` | no | n/a | Power source, gauge and battery thresholds to report, see [`power`](#power) |
 
 The default response buffer fits eight maximum-length commands, including UTF-8
 text. If your existing YAML explicitly sets a smaller `response_buffer_size`,
@@ -238,6 +240,49 @@ cannot be acknowledged or dispatched.
 Each type must be unique within one `hydronode` block. HydroNode supports up to 25 measurement types per sensor. Keep the component interval at 10 seconds or more to respect the per-sensor/type rate limit.
 
 Common types include `TEMPERATURE`, `HUMIDITY`, `PRESSURE`, `CO2`, `PM25`, `SOIL_MOISTURE`, `WATER_TEMPERATURE`, `WATER_PH`, `WATER_EC` and `BATTERY_VOLTAGE`. See the [HydroNode sensor type reference](https://hydronode.tech/docs/guide/sensor-types/) for the complete list and expected units.
+
+### `power`
+
+Tells HydroNode how the board is powered and which battery thresholds it runs. HydroNode shows
+the values in the sensor settings under "On the device". They are read only there: an ESPHome
+board reports them but takes no changes back, so the fields stay grey with a hint.
+
+```yaml
+hydronode:
+  # ...
+  power:
+    source: solar          # usb, battery or solar
+    gauge: max17048        # optional: how the battery is measured
+    cells: 1
+    interval: 5min         # optional, default: update_interval
+    save: 3.50V            # sends less below this
+    recovery: 3.30V        # radio off below this
+    standby: 3.20V         # deepest sleep below this
+    resume: 3.60V          # runs again at this
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `source` | `battery` | `usb`, `battery` or `solar` |
+| `gauge` | n/a | Lower case name of the measuring chip, e.g. `max17048`, `ina226`, `adc` |
+| `cells` | `1` | Cells in series, 1–16 |
+| `interval` | `update_interval` | Send interval to report, 10 s to 7 days |
+| `save`, `recovery`, `standby`, `resume` | n/a | Volts **per cell**, all four or none. Not with `source: usb` |
+
+The thresholds follow the same rules as everywhere in HydroNode, checked by `esphome config`:
+Standby at least 0.05 V below Recovery, Recovery at least 0.05 V below Save, Resume at least
+0.10 V above Recovery and at most 0.40 V above Save (per cell on a one cell pack; on more cells
+the gaps count for the whole pack). Each value between 2.50 V and 4.10 V per cell.
+
+The component sends them once after every boot as
+
+```text
+X-Device-Config: v=1 int=300 save=3500 rec=3300 sby=3200 res=3600 src=solar gauge=max17048 cells=1
+```
+
+in pack millivolts (volts per cell × cells). ESPHome does not act on the thresholds by itself;
+build the same values into your own `deep_sleep` and switch automations so the report matches
+what the board does.
 
 ## Manual uploads
 
@@ -354,11 +399,12 @@ Status codes:
 Since 0.4.0 every request tells the HydroNode fleet view what runs on the board and how it is doing:
 
 ```text
-X-Firmware: esphome-hydronode/0.4.0 esp32c3
+X-Firmware: esphome-hydronode/0.5.0 esp32c3
 X-Device-Status: boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi
 ```
 
 `boot` counts cold starts (power-on, crash, watchdog, restart) and is kept in the ESPHome preferences; waking from deep sleep does not count. `reset` is one of `poweron`, `software`, `panic`, `watchdog`, `brownout`, `deepsleep`, `external`, `unknown`. `rssi` and `net=wifi` are left out while WiFi is not connected; on Ethernet the header says `net=eth`. Nothing to configure. The fleet view lists the board as ESPHome; firmware and config updates over the air go through ESPHome itself, not through HydroNode. A bulk change in the fleet view marks the board "Not HydroNode firmware" and skips it.
+With a [`power`](#power) block the first upload after boot also carries `X-Device-Config`.
 
 ## Security model
 

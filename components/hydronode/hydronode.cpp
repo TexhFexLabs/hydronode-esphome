@@ -35,6 +35,7 @@ static const char *const HEADER_TIMESTAMP = "X-Timestamp";
 static const char *const HEADER_SIGNATURE = "X-Signature";
 static const char *const HEADER_FIRMWARE = "X-Firmware";
 static const char *const HEADER_DEVICE_STATUS = "X-Device-Status";
+static const char *const HEADER_DEVICE_CONFIG = "X-Device-Config";
 static const char *const FIRMWARE_PRODUCT = "esphome-hydronode";
 static const char *const CONTENT_TYPE_JSON = "application/json";
 static constexpr int HTTP_ACCEPTED = 202;
@@ -133,6 +134,9 @@ void HydroNodeComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Measurements: %u", static_cast<unsigned>(this->measurements_.size()));
   ESP_LOGCONFIG(TAG, "  Update interval: %u ms", static_cast<unsigned>(this->get_update_interval()));
   ESP_LOGCONFIG(TAG, "  Response buffer: %u bytes", static_cast<unsigned>(this->response_buffer_size_));
+  if (!this->device_config_.empty()) {
+    ESP_LOGCONFIG(TAG, "  Device config: %s", this->device_config_.c_str());
+  }
   for (const auto &measurement : this->measurements_) {
     ESP_LOGCONFIG(TAG, "    - %s", measurement.type.c_str());
   }
@@ -277,6 +281,11 @@ HydroNodeHttpResult HydroNodeComponent::post_signed_(const std::string &path, co
       {HEADER_FIRMWARE, this->firmware_header()},
       {HEADER_DEVICE_STATUS, this->device_status_header()},
   };
+  // The power block once per boot: values never change while the firmware runs.
+  const bool with_config = !this->device_config_.empty() && !this->device_config_sent_;
+  if (with_config) {
+    headers.push_back({HEADER_DEVICE_CONFIG, this->device_config_});
+  }
 
   auto container = this->http_request_->post(this->base_url_ + path, payload, headers);
   if (container == nullptr) {
@@ -285,6 +294,9 @@ HydroNodeHttpResult HydroNodeComponent::post_signed_(const std::string &path, co
   }
 
   const int status = container->status_code;
+  if (with_config && status >= 200 && status < 300) {
+    this->device_config_sent_ = true;
+  }
   std::string response = this->read_response_(container);
   container->end();
   return {status, std::move(response)};
