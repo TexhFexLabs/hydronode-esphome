@@ -41,3 +41,6 @@ hydronode:
   measurements:
     - source: test_value
       type: TEMPERATURE
+  # Powered over USB: reports the send interval (update_interval) only.
+  power:
+    source: usb
