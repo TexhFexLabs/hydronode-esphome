@@ -1,27 +1,22 @@
-<p align="center">
-  <img src="assets/hydronode-logo.svg" alt="HydroNode" width="140">
-</p>
+<div align="center">
+  <img src="assets/hydronode-logo.svg" width="96" alt="HydroNode logo" />
+  <h1>HydroNode ESPHome</h1>
+  <p><strong>Send your existing ESPHome sensors to HydroNode with a few lines of YAML.</strong></p>
 
-<h1 align="center">HydroNode ESPHome</h1>
+  [![Validate](https://github.com/TexhFexLabs/hydronode-esphome/actions/workflows/validate.yml/badge.svg)](https://github.com/TexhFexLabs/hydronode-esphome/actions/workflows/validate.yml)
+  [![Release](https://img.shields.io/github/v/release/TexhFexLabs/hydronode-esphome?label=release)](https://github.com/TexhFexLabs/hydronode-esphome/releases/latest)
+  [![ESPHome 2026.7.1+](https://img.shields.io/badge/ESPHome-2026.7.1%2B-000000.svg)](https://esphome.io/)
+  [![ESP32](https://img.shields.io/badge/platform-ESP32-555)](#compatibility)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<p align="center">
-  Native ESPHome external component for the <strong>HydroNode</strong> IoT platform by TexhFexLabs.<br>
-  Map ESPHome sensors to HydroNode, sign every upload, and handle remote commands, all in YAML.
-</p>
-
-<p align="center">
-  <a href="https://github.com/TexhFexLabs/hydronode-esphome/actions/workflows/validate.yml"><img src="https://github.com/TexhFexLabs/hydronode-esphome/actions/workflows/validate.yml/badge.svg" alt="Validate"></a>
-  <img src="https://img.shields.io/badge/ESPHome-2026.7.1%2B-000000.svg" alt="ESPHome 2026.7.1 or newer">
-  <img src="https://img.shields.io/badge/platform-ESP32-e7352c.svg" alt="ESP32">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
-</p>
-
-<p align="center">
-  <a href="https://hydronode.tech/"><strong>Website</strong></a> ·
-  <a href="https://hydronode.tech/docs/guide/sensor-types/">Sensor Types</a> ·
-  <a href="https://hydronode.tech/docs/faq/">FAQ</a> ·
-  <a href="https://github.com/TexhFexLabs/HydroNode-Library">Arduino Library</a>
-</p>
+  <p>
+    <a href="https://hydronode.tech/?ref=gh-esphome"><strong>Website</strong></a> &nbsp;
+    <a href="https://hydronode.tech/blog/esphome-to-hydronode/?ref=gh-esphome">Step-by-step guide</a> &nbsp;
+    <a href="https://hydronode.tech/docs/guide/sensor-types/">Sensor types</a> &nbsp;
+    <a href="https://hydronode.tech/docs/faq/">FAQ</a> &nbsp;
+    <a href="https://github.com/TexhFexLabs/hydronode-firmware">No-code firmware</a>
+  </p>
+</div>
 
 ---
 
@@ -36,9 +31,22 @@ hydronode:
       type: HUMIDITY
 ```
 
-[HydroNode](https://hydronode.tech/) is a secure IoT platform for hydroponics, weather stations and environmental monitoring. This component connects normal ESPHome sensor entities to the existing HydroNode API. It uses the same signed wire protocol as [HydroNode-Library](https://github.com/TexhFexLabs/HydroNode-Library), while ESPHome continues to manage WiFi, OTA updates, sensor drivers and local automations.
+[HydroNode](https://hydronode.tech/?ref=gh-esphome) is a free platform for DIY sensors. This external component maps
+normal ESPHome sensor entities to HydroNode and signs every upload. ESPHome keeps managing WiFi, its own OTA updates,
+the sensor drivers and your local automations. HydroNode adds what ESPHome does not do on its own: long-term charts,
+learned ranges and anomaly incidents, offline alerts by push or email, phone widgets, sharing, a public map for outdoor
+stations, and remote commands that drive your ESPHome switches and scripts. Free for up to 20 sensors.
 
-Create a sensor on the HydroNode Website or in the iOS App, add its credentials to ESPHome secrets, and flash the ESP32.
+<div align="center">
+  <img src="assets/esphome-to-hydronode.png" width="720" alt="ESPHome sensors arriving in HydroNode" />
+</div>
+
+Create a sensor on [hydronode.tech](https://hydronode.tech/?ref=gh-esphome) or in the iOS or Android app, add its
+credentials to your ESPHome secrets, and flash the ESP32. The full walkthrough with screenshots is in the
+[ESPHome guide](https://hydronode.tech/blog/esphome-to-hydronode/?ref=gh-esphome).
+
+Rather not write YAML at all? The [HydroNode firmware](https://github.com/TexhFexLabs/hydronode-firmware) is flashed
+from the browser and updated over the air from HydroNode.
 
 ## Features
 
@@ -60,7 +68,7 @@ Create a sensor on the HydroNode Website or in the iOS App, add its credentials 
 | Boards | ESP32 family |
 | Frameworks | ESP-IDF and Arduino |
 | Network | Any ESPHome network supported by `http_request` |
-| HydroNode | Sensor UUID and device secret from the HydroNode Website or iOS App |
+| HydroNode | Sensor UUID and device secret from the HydroNode website or the iOS or Android app |
 
 ESP8266 is not currently supported. The implementation relies on the ESP32 mbedTLS stack and is compiled in CI against both supported ESP32 frameworks.
 
@@ -68,7 +76,7 @@ ESP8266 is not currently supported. The implementation relies on the ESP32 mbedT
 
 ### 1. Obtain HydroNode credentials
 
-Create one sensor on the [HydroNode Website](https://hydronode.tech/) or in the iOS App. Copy:
+Create one sensor on the [HydroNode website](https://hydronode.tech/) or in the iOS or Android app. Copy:
 
 - the sensor UUID;
 - the device secret.
