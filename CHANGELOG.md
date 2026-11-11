@@ -6,6 +6,12 @@ to use [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Example `choice-and-state.yaml` and README section "Switches and choices in HydroNode": a template
+  `select` set by a `UINT32` command and a `switch` set by a `BOOL` command, both reporting the state
+  they are in, for HydroNode data points read as a choice or on/off. No component change.
+
 ## [0.5.0] - 2026-10-09
 
 ### Added

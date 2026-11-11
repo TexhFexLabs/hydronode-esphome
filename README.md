@@ -201,6 +201,7 @@ All examples are complete, commented ESPHome configurations:
 | [`basic-dht22.yaml`](examples/basic-dht22.yaml) | A physical DHT22 with temperature and humidity |
 | [`hydroponics.yaml`](examples/hydroponics.yaml) | DS18B20 water temperature plus a calibrated analog pH input |
 | [`commands-and-actuators.yaml`](examples/commands-and-actuators.yaml) | A remote pump command, GPIO output and manual upload button |
+| [`choice-and-state.yaml`](examples/choice-and-state.yaml) | A heater mode (choice) and a pump (on/off) set from HydroNode, reporting their state |
 | [`template-sensors.yaml`](examples/template-sensors.yaml) | Small hardware-free example for a first configuration test |
 | [`battery-power.yaml`](examples/battery-power.yaml) | Solar battery with a MAX17048 gauge; reports power source and thresholds with the `power:` block |
 
@@ -369,6 +370,22 @@ hydronode:
 ```
 
 Confirmed means **received by the ESP32 and handed to your automation**, not necessarily that a physical action completed. Add your own safety conditions, duration limits, interlocks and local fallback behavior before controlling pumps, heaters or dosing equipment.
+
+### Switches and choices in HydroNode
+
+HydroNode shows every value as a data point. Read one as on/off or as a choice in the HydroNode web app
+and bind a command to it, and the app and Home Assistant show it as a switch or a picker. Nothing new to
+configure in the component:
+
+- declare the command with the matching type: `BOOL` for on/off, `UINT32` for a choice (the app sends
+  the index of the option);
+- report the state the device really took as a measurement (`0`/`1`, or the option index), also after
+  changes made on the device itself.
+
+HydroNode shows a change as *Pending* until the device confirms the command or reports a matching value.
+Report from a `script` with a short delay rather than from `on_command` directly, so the report is its own
+upload. [`choice-and-state.yaml`](examples/choice-and-state.yaml) is a complete heater mode (template
+`select`) and pump (`switch`) set from HydroNode and reported back.
 
 ## Upload status automations
 

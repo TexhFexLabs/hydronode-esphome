@@ -1,0 +1,157 @@
+# A heater mode (Off, Eco, Boost) and a pump that HydroNode can set and that
+# report the state they are really in. In HydroNode the reported values become
+# data points you read as a choice (HEATER_MODE) and as on/off (PUMP), with a
+# command bound to each, so the app shows them as controls with "Confirmed".
+#
+# In the HydroNode web app, once after the first values arrived:
+#   HEATER_MODE: Read as Choice, options 0 Off, 1 Eco, 2 Boost,
+#                command heater_mode, type UINT32.
+#   PUMP:        Read as On/off, command pump, type BOOL.
+substitutions:
+  device_name: hydronode-heater
+  friendly_name: HydroNode Heater
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/TexhFexLabs/hydronode-esphome
+      ref: main
+    components: [hydronode]
+    refresh: 1d
+
+http_request:
+  id: hydronode_http
+  timeout: 10s
+  verify_ssl: true
+
+time:
+  - platform: sntp
+    id: hydronode_time
+    timezone: UTC
+
+output:
+  - platform: gpio
+    id: heater_low
+    pin: GPIO25
+  - platform: gpio
+    id: heater_high
+    pin: GPIO26
+
+select:
+  - platform: template
+    id: heater_mode
+    name: Heater Mode
+    options: ["Off", "Eco", "Boost"]
+    initial_option: "Off"
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        - lambda: |-
+            // i is the index of the option: 0 Off, 1 Eco, 2 Boost.
+            if (i >= 1) id(heater_low).turn_on(); else id(heater_low).turn_off();
+            if (i == 2) id(heater_high).turn_on(); else id(heater_high).turn_off();
+        - script.execute: report_state
+
+switch:
+  - platform: gpio
+    id: pump
+    name: Pump
+    pin: GPIO27
+    restore_mode: ALWAYS_OFF
+    # Also a tap in Home Assistant or on the device reports the new state.
+    on_turn_on:
+      - script.execute: report_state
+    on_turn_off:
+      - script.execute: report_state
+
+sensor:
+  # The states as numbers for HydroNode: the option index and 0/1.
+  - platform: template
+    id: heater_mode_index
+    internal: true
+    update_interval: 60s
+    lambda: |-
+      auto index = id(heater_mode).active_index();
+      return index.has_value() ? (float) index.value() : NAN;
+  - platform: template
+    id: pump_state
+    internal: true
+    update_interval: 60s
+    lambda: |-
+      return id(pump).state ? 1.0f : 0.0f;
+
+script:
+  # Reports both states shortly after a change, outside the command handler.
+  # HydroNode accepts one value per type every 10 seconds; a quick second change
+  # is reported with the next regular upload.
+  - id: report_state
+    mode: restart
+    then:
+      - delay: 2s
+      - component.update: heater_mode_index
+      - component.update: pump_state
+      - hydronode.send:
+          id: hydronode_cloud
+          type: HEATER_MODE
+          value: !lambda return id(heater_mode_index).get_state();
+      - hydronode.send:
+          id: hydronode_cloud
+          type: PUMP
+          value: !lambda return id(pump_state).get_state();
+
+hydronode:
+  id: hydronode_cloud
+  http_request_id: hydronode_http
+  time_id: hydronode_time
+  sensor_id: !secret hydronode_sensor_id
+  device_secret: !secret hydronode_device_secret
+  update_interval: 300s
+  # Every regular upload reports the states too, so HydroNode never keeps an old one.
+  measurements:
+    - source: heater_mode_index
+      type: HEATER_MODE
+    - source: pump_state
+      type: PUMP
+
+  commands:
+    - name: heater_mode
+      type: UINT32
+    - name: pump
+      type: BOOL
+
+  on_command:
+    then:
+      - lambda: |-
+          if (command == "heater_mode") {
+            // The app sends the option index. Another number keeps the mode.
+            char *end = nullptr;
+            unsigned long index = strtoul(value_json.c_str(), &end, 10);
+            if (end != value_json.c_str() && *end == '\0' && index < id(heater_mode).size()) {
+              id(heater_mode).make_call().set_index(index).perform();
+            } else {
+              ESP_LOGW("heater", "heater_mode %s is not a mode, kept", value_json.c_str());
+              id(report_state).execute();
+            }
+          } else if (command == "pump") {
+            if (value_json == "true") id(pump).turn_on(); else id(pump).turn_off();
+          }
