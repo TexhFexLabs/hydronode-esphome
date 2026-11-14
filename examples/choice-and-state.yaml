@@ -34,7 +34,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/TexhFexLabs/hydronode-esphome
-      ref: main
+      ref: v0.5.1  # next release; v0.5.0 behaves the same until it is tagged
     components: [hydronode]
     refresh: 1d
 

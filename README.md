@@ -58,7 +58,7 @@ from the browser and updated over the air from HydroNode.
 - **Manual uploads:** Use the `hydronode.send` action from buttons, intervals or automations.
 - **Useful diagnostics:** Success and error triggers expose the measurement type, value and HTTP status without logging the secret.
 - **Both ESP32 frameworks:** Continuously validated with ESP-IDF and Arduino.
-- **Shows up in the fleet view:** Every request reports the component version, restarts, reset reason and signal, so the HydroNode fleet view lists the board with its health and errors. Updates over the air stay with ESPHome.
+- **Shows up under Devices and updates:** Every request reports the component version, restarts, reset reason and signal, so HydroNode lists the board with its health and errors. Updates over the air stay with ESPHome.
 
 ## Compatibility
 
@@ -104,12 +104,15 @@ external_components:
   - source:
       type: git
       url: https://github.com/TexhFexLabs/hydronode-esphome
-      ref: v0.1.0
+      ref: v0.5.1
     components: [hydronode]
     refresh: 1d
 ```
 
-`ref` is pinned to a release tag so a device build never changes underneath you. Use `ref: main` only to test unreleased changes.
+`ref` is pinned to a release tag so a device build never changes underneath you. Use `ref: main` only to test unreleased changes: `main` changes for everyone who builds from it.
+
+`v0.5.1` is the next release (the `choice-and-state` example and these docs, no component change). Until that tag
+exists, use `ref: v0.5.0`: it builds the same component. The examples in [`examples/`](examples) are pinned the same way.
 
 ### 4. Configure HTTP and time
 
@@ -150,7 +153,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/TexhFexLabs/hydronode-esphome
-      ref: v0.1.0
+      ref: v0.5.1
     components: [hydronode]
 
 http_request:
@@ -419,16 +422,16 @@ Status codes:
 | `429` | Backend rate limit | Increase intervals and avoid overlapping manual sends |
 | `5xx` | HydroNode service error | Retry later with backoff |
 
-## Fleet view headers
+## Device headers
 
-Since 0.4.0 every request tells the HydroNode fleet view what runs on the board and how it is doing:
+Since 0.4.0 every request tells HydroNode (*Devices and updates*) what runs on the board and how it is doing:
 
 ```text
 X-Firmware: esphome-hydronode/0.5.0 esp32c3
 X-Device-Status: boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi
 ```
 
-`boot` counts cold starts (power-on, crash, watchdog, restart) and is kept in the ESPHome preferences; waking from deep sleep does not count. `reset` is one of `poweron`, `software`, `panic`, `watchdog`, `brownout`, `deepsleep`, `external`, `unknown`. `rssi` and `net=wifi` are left out while WiFi is not connected; on Ethernet the header says `net=eth`. Nothing to configure. The fleet view lists the board as ESPHome; firmware and config updates over the air go through ESPHome itself, not through HydroNode. A bulk change in the fleet view marks the board "Not HydroNode firmware" and skips it.
+`boot` counts cold starts (power-on, crash, watchdog, restart) and is kept in the ESPHome preferences; waking from deep sleep does not count. `reset` is one of `poweron`, `software`, `panic`, `watchdog`, `brownout`, `deepsleep`, `external`, `unknown`. `rssi` and `net=wifi` are left out while WiFi is not connected; on Ethernet the header says `net=eth`. Nothing to configure. HydroNode lists the board as ESPHome; firmware and config updates over the air go through ESPHome itself, not through HydroNode. A bulk change marks the board "Not HydroNode firmware" and skips it.
 With a [`power`](#power) block the first upload after boot also carries `X-Device-Config`.
 
 ## Security model
