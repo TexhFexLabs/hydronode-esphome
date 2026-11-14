@@ -15,7 +15,7 @@ from . import power_config
 
 CODEOWNERS = ["@TexhFexLabs"]
 # Sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as COMPONENT_VERSION in hydronode.h.
-COMPONENT_VERSION = "0.5.0"
+COMPONENT_VERSION = "0.5.1"
 DEPENDENCIES = ["esp32", "http_request", "network", "sensor", "time"]
 AUTO_LOAD = ["json"]
 MULTI_CONF = True

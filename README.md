@@ -427,7 +427,7 @@ Status codes:
 Since 0.4.0 every request tells HydroNode (*Devices and updates*) what runs on the board and how it is doing:
 
 ```text
-X-Firmware: esphome-hydronode/0.5.0 esp32c3
+X-Firmware: esphome-hydronode/0.5.1 esp32c3
 X-Device-Status: boot=12;reset=poweron;uptime=45;rssi=-61;net=wifi
 ```
 

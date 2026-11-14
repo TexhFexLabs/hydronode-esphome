@@ -4,13 +4,14 @@ All notable changes to HydroNode ESPHome are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project intends
 to use [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.1] - 2026-11-14
 
 ### Added
 
 - Example `choice-and-state.yaml` and README section "Switches and choices in HydroNode": a template
   `select` set by a `UINT32` command and a `switch` set by a `BOOL` command, both reporting the state
-  they are in, for HydroNode data points read as a choice or on/off. No component change.
+  they are in, for HydroNode data points read as a choice or on/off.
+- Version bump to `0.5.1` across component headers (`hydronode.h`, `__init__.py`).
 
 ## [0.5.0] - 2026-10-09
 
