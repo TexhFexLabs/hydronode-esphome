@@ -20,7 +20,7 @@ namespace esphome::hydronode {
 
 /// Component version, sent as X-Firmware: esphome-hydronode/<version> <chip>. Same as
 /// COMPONENT_VERSION in __init__.py and the newest release in CHANGELOG.md.
-static constexpr const char *COMPONENT_VERSION = "0.5.0";
+static constexpr const char *COMPONENT_VERSION = "0.5.1";
 
 struct HydroNodeMeasurement {
   sensor::Sensor *source;
